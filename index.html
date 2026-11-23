@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>КС Тактики</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Tektur:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout idea: a radar table. One dark world, the square map is the hero,
+     tools sit directly under the thumb, ready-made plays live in a side rail. */
+  color-scheme: dark;
+  --bg: #0c1215;
+  --panel: #131c20;
+  --panel-2: #1a262b;
+  --line: #27363d;
+  --text: #e9ecea;
+  --muted: #8b9ba1;
+  --t-side: #e3a53a;      /* accent, also the T side */
+  --ct-side: #5aa7e6;     /* CT side, semantic only */
+  --danger: #f0524b;
+  --display: "Tektur", "Arial Narrow", "Segoe UI", sans-serif;
+  --body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, label:focus-within {
+  outline: 2px solid var(--t-side);
+  outline-offset: 2px;
+}
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 16px 36px;
+  display: grid;
+  gap: 12px;
+}
+
+/* ---------- header ---------- */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand i {
+  width: 14px; height: 14px;
+  border: 2px solid var(--t-side);
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+}
+.brand i::before, .brand i::after {
+  content: ""; position: absolute; background: var(--t-side);
+}
+.brand i::before { left: 50%; top: -6px; bottom: -6px; width: 2px; transform: translateX(-50%); }
+.brand i::after { top: 50%; left: -6px; right: -6px; height: 2px; transform: translateY(-50%); }
+.status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sync {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 13px; color: var(--muted);
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+}
+.sync b { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.sync[data-state="live"] { color: var(--text); }
+.sync[data-state="live"] b { background: #3fc77a; box-shadow: 0 0 0 3px rgba(63,199,122,.18); }
+.sync[data-state="stale"] b, .sync[data-state="off"] b { background: var(--danger); }
+.sync[data-state="local"] b { background: var(--t-side); }
+.peers { display: flex; align-items: center; }
+.peers span {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--display); font-weight: 600; font-size: 12px;
+  color: #10181b; border: 2px solid var(--bg);
+  margin-left: -6px;
+}
+.peers span:first-child { margin-left: 0; }
+.peers span.me { box-shadow: 0 0 0 1.5px var(--text); }
+
+/* ---------- map tabs ---------- */
+.maps {
+  display: flex; gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.maps::-webkit-scrollbar { display: none; }
+.maps button {
+  flex: none;
+  font-family: var(--display); font-weight: 600; font-size: 14px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 9px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.maps button[aria-selected="true"] {
+  color: #14110a; background: var(--t-side); border-color: var(--t-side);
+}
+.maps button:disabled { cursor: default; opacity: .75; }
+
+/* ---------- work area ---------- */
+.work { display: grid; gap: 14px; }
+@media (min-width: 900px) {
+  .work { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+}
+.board { display: grid; gap: 10px; min-width: 0; }
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0f12;
+}
+.stage canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+}
+.stage.readonly canvas { cursor: default; }
+.zoom {
+  position: absolute; right: 8px; bottom: 8px;
+  display: flex; gap: 6px;
+}
+.zoom button {
+  width: 34px; height: 34px; padding: 0;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(19,28,32,.88);
+  color: var(--text);
+  font-family: var(--display); font-size: 20px; line-height: 1;
+}
+.zoom svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: none) { .tool.zoombtn { display: none; } }
+.custom-empty {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(86%, 380px);
+  text-align: center;
+  background: rgba(19,28,32,.92);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 18px 16px;
+  display: grid; gap: 10px; justify-items: center;
+}
+.custom-empty p { margin: 0; color: var(--muted); font-size: 14px; }
+.custom-empty strong { font-family: var(--display); font-size: 17px; letter-spacing: .04em; }
+[hidden] { display: none !important; }
+
+.tools { display: grid; gap: 8px; max-width: 760px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tool {
+  display: grid; justify-items: center; gap: 2px;
+  min-width: 46px; padding: 6px 6px 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 10.5px; color: var(--muted);
+  flex: 1 1 46px; max-width: 92px;
+}
+.tool svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tool[aria-pressed="true"] { color: var(--text); border-color: var(--t-side); background: rgba(227,165,58,.12); }
+.tool.act { flex: 0 0 auto; }
+.tool.warn:hover { color: var(--danger); border-color: var(--danger); }
+.swatch {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--panel);
+  padding: 3px;
+  display: grid; place-items: center;
+}
+.swatch span {
+  width: 100%; height: 100%; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--display); font-weight: 700; font-size: 12px; color: #10181b;
+}
+.swatch[aria-pressed="true"] { border-color: var(--text); }
+.spacer { flex: 1 1 auto; }
+@media (max-width: 480px) {
+  .tool { min-width: 0; padding: 6px 1px 4px; font-size: 10px; flex-basis: 40px; }
+  .tool.act { padding: 8px 10px; }
+  .tool.act span { display: none; }
+  .swatch { width: 30px; height: 30px; padding: 2px; }
+  .row { gap: 5px; }
+}
+.hint { margin: 0; font-size: 12.5px; color: var(--muted); max-width: 760px; }
+.readonly-note {
+  margin: 0; padding: 9px 12px; max-width: 760px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); color: var(--muted); font-size: 13.5px;
+}
+
+/* ---------- plays ---------- */
+.plays {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  display: grid; gap: 10px;
+  min-width: 0;
+}
+.plays h2 {
+  margin: 0;
+  font-family: var(--display); font-weight: 600; font-size: 15px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.play {
+  width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.play:disabled { cursor: default; }
+.play .side {
+  flex: none;
+  font-family: var(--display); font-weight: 700; font-size: 12px;
+  width: 30px; padding: 2px 0; text-align: center; border-radius: 4px;
+  color: #10181b; background: var(--t-side);
+}
+.play .side.ct { background: var(--ct-side); }
+.play .name { font-weight: 600; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.play .state { font-size: 12px; color: var(--muted); flex: none; }
+.play[aria-pressed="true"] { border-color: var(--t-side); background: rgba(227,165,58,.1); }
+.play[aria-pressed="true"] .state { color: var(--t-side); }
+.steps { margin: 0; padding: 2px 0 4px 22px; display: grid; gap: 6px; font-size: 14px; }
+.steps li::marker { font-family: var(--display); color: var(--t-side); font-weight: 600; }
+.plays .note { margin: 0; font-size: 13px; color: var(--muted); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 9px 14px; border-radius: 8px;
+  border: 1px solid var(--t-side); background: var(--t-side); color: #14110a;
+  font-weight: 600; font-size: 14px;
+}
+.btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.file { position: relative; overflow: hidden; }
+.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+
+/* ---------- dialog + toast ---------- */
+.veil {
+  position: fixed; inset: 0; z-index: 20;
+  background: rgba(5,8,10,.7);
+  display: grid; place-items: center; padding: 16px;
+}
+.dialog {
+  width: min(100%, 360px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px; display: grid; gap: 12px;
+}
+.dialog h3 { margin: 0; font-family: var(--display); font-size: 18px; letter-spacing: .03em; text-wrap: balance; }
+.dialog p { margin: 0; color: var(--muted); font-size: 14px; }
+.dialog .row { justify-content: flex-end; }
+.toast {
+  position: fixed; left: 50%; bottom: 18px; z-index: 30;
+  transform: translateX(-50%);
+  max-width: min(92vw, 420px);
+  background: #f1eee4; color: #171a1b;
+  padding: 10px 14px; border-radius: 8px;
+  font-size: 14px; font-weight: 500;
+  box-shadow: 0 8px 30px rgba(0,0,0,.45);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: rise .18s ease-out; }
+  @keyframes rise { from { transform: translate(-50%, 8px); opacity: .4; } }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1 class="brand"><i aria-hidden="true"></i>КС Тактики</h1>
+    <div class="status">
+      <div class="peers" id="peers" aria-label="Кто сейчас на доске"></div>
+      <div class="sync" id="sync" data-state="wait" role="status"><b></b><span id="syncText">Подключаюсь к доске</span></div>
+    </div>
+  </header>
+
+  <nav class="maps" id="maps" role="tablist" aria-label="Карта"></nav>
+
+  <main class="work">
+    <section class="board" aria-label="Доска">
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Карта, на которой можно рисовать"></canvas>
+        <div class="zoom" role="group" aria-label="Масштаб">
+          <button type="button" id="zoomReset" aria-label="Показать всю карту" title="Показать всю карту" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        </div>
+        <div class="custom-empty" id="customEmpty" hidden>
+          <strong>Своя карта</strong>
+          <p id="customEmptyText">Загрузи скриншот радара любой карты и рисуйте поверх него.</p>
+          <label class="btn file" id="uploadWrap"><span>Загрузить картинку</span><input type="file" id="bgFile" accept="image/*"></label>
+        </div>
+      </div>
+
+      <p class="readonly-note" id="roNote" hidden>У тебя доступ только на просмотр. Рисовать могут владелец доски и те, кого он пригласил с правом изменять.</p>
+
+      <div class="tools" id="tools">
+        <div class="row" id="toolRow" role="group" aria-label="Инструмент"></div>
+        <div class="row" id="colorRow" role="group" aria-label="Цвет"></div>
+      </div>
+      <p class="hint">Пунктир и номера: готовая тактика. Сплошные линии: то, что нарисовала команда. Цвета 1–5 совпадают с номерами игроков. Двумя пальцами карту можно приблизить и сдвинуть.</p>
+    </section>
+
+    <aside class="plays" id="plays" aria-label="Готовые тактики"></aside>
+  </main>
+</div>
+
+<div class="veil" id="veil" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <h3 id="dlgTitle">Очистить доску для всей команды?</h3>
+    <p>Все рисунки и готовая тактика на этой карте пропадут у каждого.</p>
+    <div class="row">
+      <button class="btn ghost" id="dlgNo" type="button">Оставить</button>
+      <button class="btn danger" id="dlgYes" type="button">Очистить</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="alert" hidden></div>
+
+<script src="mqtt.min.js"></script>
+<script src="sync.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ================= data ================= */
+
+const COLORS = ['#f2d13c', '#b97cf2', '#3fc77a', '#5ab0f2', '#f28a3c', '#f4f1e8', '#f0524b'];
+const COLOR_NAMES = ['Жёлтый, игрок 1', 'Фиолетовый, игрок 2', 'Зелёный, игрок 3', 'Синий, игрок 4', 'Оранжевый, игрок 5', 'Белый', 'Красный'];
+
+// Zones: [x, y, w, h, label, type]. Space is 1000 x 1000. These are schematic layouts, not radar art.
+const MAPS = {
+  mirage: {
+    name: 'Mirage', img: 'maps/mirage.webp', lift: 0.3,
+    tactics: [
+      { id: 'mir-a', side: 'T', name: 'Выход на A через Ramp и Palace',
+        paths: [[[913,313],[897,553],[803,605],[757,675],[653,661],[565,781]],[[965,313],[887,563],[803,603],[759,675],[655,661],[611,815]],[[939,339],[891,559],[803,605],[757,675],[651,661],[525,761]],[[913,365],[945,623],[865,645],[853,767],[769,793],[731,829],[659,829],[639,791],[599,811],[601,841]],[[965,365],[939,629],[867,643],[853,767],[769,793],[731,829],[659,829],[637,785],[541,831]]],
+        util: [["smoke",447.0,817.0,""],["smoke",395.0,653.0,""],["smoke",481.0,721.0,""],["flash",555.0,771.0,""]],
+        steps: [
+          'Игроки 1, 2, 3 встают на Ramp, 4 и 5 в Palace. До команды не светимся.',
+          'Кидаем три смока: CT, Jungle и Stairs.',
+          'Флешка над сайтом, Ramp и Palace выходят одновременно.',
+          'Зачищаем сайт, ставим бомбу и держим выходы из смоков.'
+        ] },
+      { id: 'mir-b', side: 'T', name: 'Сплит на B: Apps и Short',
+        paths: [[[913,313],[879,143],[777,141],[769,113],[593,113],[511,165],[401,159],[331,127],[183,131],[181,231]],[[965,313],[839,165],[777,137],[765,109],[589,117],[509,163],[401,159],[331,127],[183,131],[131,279]],[[939,339],[873,175],[723,201],[667,407],[459,373],[419,255],[255,277],[231,301]],[[913,365],[893,195],[729,195],[665,409],[459,373],[419,255],[245,251]],[[965,365],[863,169],[719,205],[669,407],[487,489],[471,521]]],
+        util: [["smoke",385.0,431.0,""],["smoke",453.0,565.0,""],["smoke",241.0,359.0,""],["flash",175.0,261.0,""]],
+        steps: [
+          'Игроки 1 и 2 идут через B Apps, 3, 4 и 5 берут Mid.',
+          'Смоки в Window и Connector. Игрок 5 остаётся в Mid и держит Connector.',
+          '3 и 4 поднимаются на Short. Смок в Market, флешка на сайт.',
+          'Apps и Short выходят на B одновременно. Ставим бомбу, держим Market и Short.'
+        ] },
+      { id: 'mir-ct', side: 'CT', name: 'Защита 2-1-2',
+        paths: [[[237,707],[333,845],[511,807],[541,791]],[[289,707],[285,553],[339,527],[383,641]],[[263,733],[297,541],[367,507],[383,451],[391,445]],[[237,759],[267,459],[193,385],[187,333],[171,241]],[[289,759],[261,453],[195,387],[199,343],[307,257],[335,275]]],
+        util: [],
+        steps: [
+          'Расстановка 2-1-2: двое на A, один в Window, двое на B.',
+          'Игрок 1 играет сайт A, игрок 2 держит Jungle и Stairs и первым помогает в Mid.',
+          'Игрок 3 в Window контролирует Mid и даёт инфу.',
+          'Игрок 4 на сайте B, игрок 5 на Short. Ротация только по инфе.'
+        ] }
+    ]
+  },
+  dust2: {
+    name: 'Dust II', img: 'maps/dust2.webp', lift: 0.3,
+    tactics: [
+      { id: 'd2-b', side: 'T', name: 'Быстрый выход на B через тоннели',
+        paths: [[[355,877],[189,777],[165,471],[107,391],[131,257],[151,225]],[[407,877],[263,855],[179,603],[165,471],[107,391],[131,259],[215,175]],[[381,903],[181,739],[165,471],[107,391],[123,303],[225,265]],[[355,929],[181,693],[165,471],[107,391],[101,185]],[[407,929],[181,727],[191,463],[245,441]]],
+        util: [["smoke",263.0,215.0,""],["smoke",305.0,185.0,""],["molly",105.0,151.0,""],["flash",185.0,215.0,""]],
+        steps: [
+          'Все пятеро сразу бегут через Upper Tunnels и не останавливаются.',
+          'Флешка на сайт и молотов в дальний угол. Первыми заходят игроки 1 и 2.',
+          'Смоки на B Doors и Window, чтобы отрезать ротацию через CT Mid.',
+          'Ставим бомбу. Игрок 5 остаётся в тоннелях и смотрит Lower и спину.'
+        ] },
+      { id: 'd2-a', side: 'T', name: 'Сплит на A: Long и Short',
+        paths: [[[355,877],[581,845],[691,631],[711,521],[863,429],[821,201]],[[407,877],[601,815],[691,629],[711,521],[863,429],[871,175]],[[381,903],[601,811],[691,631],[711,521],[863,429],[827,265],[815,265]],[[355,929],[457,849],[461,605],[529,397],[627,375],[669,231],[715,225]],[[407,929],[457,825],[461,605],[529,397],[627,375],[661,255],[681,261]]],
+        util: [["smoke",641.0,205.0,""],["smoke",475.0,395.0,""],["flash",815.0,195.0,""],["flash",691.0,263.0,""]],
+        steps: [
+          'Игроки 1, 2 и 3 берут Long: флешка из Long Doors, выходим парой.',
+          '4 и 5 идут в Mid, кидают смок на Xbox и поднимаются на Short.',
+          'Смок CT, флешки с Long и Short, заходим на A с двух сторон одновременно.',
+          'Ставим бомбу. Игрок 3 остаётся на Long, остальные держат Short и CT.'
+        ] },
+      { id: 'd2-ct', side: 'CT', name: 'Защита: Long, Short, Mid и двое на B',
+        paths: [[[575,187],[861,281],[861,331]],[[627,187],[681,255]],[[601,213],[459,285],[471,321]],[[575,239],[235,211]],[[627,239],[179,247],[141,285]]],
+        util: [],
+        steps: [
+          'Расстановка: игрок 1 на Long, 2 на Short и A, 3 в Mid, 4 и 5 на B.',
+          'Игрок 3 смотрит Mid Doors и считает, сколько прошло в B и на Short.',
+          'На B один играет сайт, второй смотрит выход из тоннелей из-за укрытия.',
+          'Ротация на A через CT Spawn, на B через CT Mid и B Doors.'
+        ] }
+    ]
+  },
+  inferno: {
+    name: 'Inferno', img: 'maps/inferno.webp', lift: 0.35,
+    tactics: [
+      { id: 'inf-b', side: 'T', name: 'Banana и выход на B',
+        paths: [[[25,673],[97,761],[123,741],[143,689],[263,669],[343,621],[423,599],[481,371],[567,327],[531,233],[461,211]],[[77,673],[77,755],[119,751],[143,689],[263,669],[343,621],[423,599],[481,371],[567,327],[521,207],[505,191]],[[51,699],[95,761],[123,741],[143,689],[263,669],[343,621],[423,599],[481,371],[567,327],[533,235],[431,235]],[[29,725],[109,761],[145,689],[263,669],[343,621],[423,599],[481,371],[567,327],[537,251],[521,251]],[[73,725],[93,761],[123,743],[141,689],[263,669],[343,621],[419,639],[517,669]]],
+        util: [["molly",501.0,337.0,""],["smoke",591.0,193.0,""],["smoke",431.0,111.0,""],["flash",471.0,251.0,""]],
+        steps: [
+          'Игроки 1 и 2 берут Banana: молотов в сторону Car и флешка. 3 и 4 идут следом.',
+          'Игрок 5 держит Mid, чтобы защита не зашла в спину.',
+          'Смоки CT и Coffins, флешка на сайт, заходим вчетвером.',
+          'Ставим бомбу, держим CT и Banana. Игрок 5 подтягивается через Banana.'
+        ] },
+      { id: 'inf-a', side: 'T', name: 'Сплит на A: Apps, Short и Long',
+        paths: [[[25,673],[81,831],[129,849],[149,883],[225,871],[299,845],[621,825],[653,803],[667,817],[675,869],[805,863],[843,819],[815,735],[801,721]],[[77,673],[77,827],[129,849],[149,883],[225,871],[299,845],[621,825],[653,803],[667,817],[675,869],[805,863],[845,815],[835,745]],[[51,699],[95,761],[123,741],[143,689],[263,669],[343,621],[419,639],[591,689],[703,669],[727,565],[901,587],[869,665],[831,665]],[[29,725],[109,761],[145,689],[263,669],[343,621],[419,639],[591,689],[703,669],[727,565],[901,587],[861,701]],[[73,725],[93,761],[123,743],[141,689],[263,669],[343,621],[419,639],[591,689],[703,669],[731,553],[811,579]]],
+        util: [["smoke",925.0,641.0,""],["smoke",791.0,501.0,""],["molly",951.0,781.0,""],["flash",831.0,701.0,""]],
+        steps: [
+          'Игроки 1 и 2 поднимаются в Apps, 3, 4 и 5 занимают Mid.',
+          'Смоки Library и Arch, молотов в Pit.',
+          'Флешка над сайтом: 1 и 2 выходят с Balcony, 3 и 4 с Short, 5 заходит через Long.',
+          'Ставим бомбу, держим Arch и Library, один игрок смотрит Apps.'
+        ] },
+      { id: 'inf-ct', side: 'CT', name: 'Защита: двое на B, трое на A',
+        paths: [[[899,313],[757,183],[477,211]],[[949,313],[773,183],[573,227],[543,351],[505,339]],[[925,339],[797,465],[785,515]],[[899,365],[915,471],[955,527],[935,557],[905,573],[863,681],[831,691]],[[947,363],[911,465],[955,527],[935,557],[905,573],[939,759],[951,771]]],
+        util: [],
+        steps: [
+          'Расстановка: двое на B и трое на A.',
+          'На B игрок 1 играет сайт, игрок 2 гранатами задерживает выход по Banana в начале раунда.',
+          'На A игрок 5 в Pit, игрок 4 на сайте смотрит Short, игрок 3 у Arch готов к ротации.',
+          'Ротация между сайтами через CT Spawn и Constr, только по инфе.'
+        ] }
+    ]
+  },
+  nuke: {
+    name: 'Nuke', img: 'maps/nuke.webp', lift: 0, h: 402,
+    tactics: [
+      { id: 'nuke-a', side: 'T', name: 'Выход на A: Lobby и Outside',
+        paths: [[[95,219],[179,245],[265,225],[289,191],[301,195],[313,227],[323,227],[337,171],[371,165],[421,201]],[[147,219],[157,245],[263,227],[289,191],[301,195],[313,227],[323,227],[337,171],[371,165],[441,181]],[[121,233],[205,245],[269,221],[289,191],[301,195],[313,227],[369,221],[373,231],[387,233],[411,219]],[[77,247],[97,227],[195,245],[261,237],[397,337],[553,315],[545,273],[511,169],[457,157],[445,201]],[[147,255],[261,237],[397,337],[553,315],[545,273],[511,169],[451,157],[431,175]]],
+        util: [["smoke",525.0,191.0,""],["smoke",441.0,251.0,""],["flash",425.0,201.0,""]],
+        steps: [
+          'Игроки 1, 2, 3 идут через Lobby, 4 и 5 через Outside.',
+          'Смоки со стороны CT, флешка над сайтом.',
+          '1, 2, 3 заходят из Lobby, 4 и 5 через Hut, одновременно.',
+          'Ставим бомбу и держим выходы из смоков.'
+        ] },
+      { id: 'nuke-b', side: 'T', name: 'Выход на B: Ramp и Secret',
+        paths: [[[95,219],[179,245],[265,225],[289,191],[301,195],[313,229],[329,223],[335,173],[367,149],[375,107],[403,91],[395,65],[421,41],[875,41,1],[887,109],[899,115],[899,129],[871,211]],[[147,219],[157,245],[263,227],[289,191],[301,195],[313,229],[329,223],[335,173],[367,149],[375,107],[403,91],[395,65],[421,41],[875,41,1],[887,109],[899,115],[899,129],[877,209],[891,231]],[[121,233],[205,245],[269,221],[289,191],[301,195],[313,229],[329,223],[335,173],[367,149],[375,107],[403,91],[395,65],[421,41],[875,41,1],[887,109],[899,115],[899,129],[853,195]],[[77,247],[97,227],[195,245],[267,223],[289,191],[301,195],[313,229],[329,223],[335,173],[367,149],[375,107],[403,91],[395,65],[421,41],[875,41,1],[887,109],[899,115],[899,129],[885,171]],[[147,255],[261,237],[397,337],[495,379],[513,371],[979,371,1],[975,337],[933,323],[929,227],[907,223],[899,183],[905,171]]],
+        util: [["smoke",905.0,151.0,""],["flash",871.0,205.0,""]],
+        steps: [
+          'Игроки 1, 2, 3, 4 идут через Lobby на Ramp и спускаются вниз.',
+          'Игрок 5 идёт через Outside в Secret.',
+          'Смок и флешка на B, Ramp и Secret выходят одновременно.',
+          'Ставим бомбу и держим Ramp и Secret.'
+        ] },
+      { id: 'nuke-ct', side: 'CT', name: 'Защита 3-2',
+        paths: [[[589,153],[523,169],[493,165],[457,157],[435,203]],[[641,153],[521,169],[483,171]],[[615,163],[565,173],[451,321]],[[575,179],[949,201,1],[949,219],[889,223],[881,215]],[[655,181],[949,201,1],[949,219],[915,223],[901,241]]],
+        util: [],
+        steps: [
+          'Расстановка 3-2: трое наверху, двое на B.',
+          'Игрок 1 играет сайт A, игрок 2 стоит в Hut, игрок 3 смотрит Outside.',
+          'Игроки 4 и 5 спускаются на нижний уровень к B.',
+          'Ротация только по инфе.'
+        ] }
+    ]
+  },
+  ancient: {
+    name: 'Ancient', img: 'maps/ancient.webp', lift: 0.3,
+    tactics: [
+      { id: 'anc-a', side: 'T', name: 'Выход на A: Main и Donut',
+        paths: [[[454,859],[428,756],[268,686],[225,502],[217,412],[174,369],[209,295]],[[483,883],[443,826],[432,760],[268,686],[225,502],[217,412],[174,369],[256,299],[279,307]],[[457,904],[432,760],[268,686],[209,494],[170,486],[174,346],[182,244]],[[513,859],[502,799],[346,709],[354,588],[455,553],[443,463],[346,443],[311,404],[311,307]],[[510,904],[506,803],[346,709],[354,588],[455,553],[443,463],[346,443],[311,404],[322,307],[342,291]]],
+        util: [['smoke',389,217,''], ['smoke',311,186,''], ['smoke',475,311,''], ['flash',256,271,'']],
+        steps: [
+          'Игроки 1, 2, 3 идут к A Main. 4 и 5 под смоком проходят Mid в Donut.',
+          'Два смока закрывают оба прохода со стороны CT.',
+          'Флешка на сайт, A Main и Donut выходят одновременно.',
+          'Ставим бомбу, держим выходы из смоков, один игрок смотрит Donut.'
+        ] },
+      { id: 'anc-b', side: 'T', name: 'Выход на B: Main и Cave',
+        paths: [[[513,859],[533,779],[682,775],[787,631],[787,588],[826,506],[787,451]],[[510,904],[533,779],[682,775],[787,631],[787,588],[826,510],[811,443]],[[483,883],[533,779],[682,775],[783,635],[783,578],[814,531]],[[454,859],[428,756],[346,709],[354,588],[428,568],[604,580],[643,521],[670,506],[670,494],[662,443],[686,385],[713,396],[721,432],[756,443]],[[457,904],[432,760],[346,709],[354,588],[428,568],[604,580],[643,521],[670,506],[670,494],[662,443]]],
+        util: [['smoke',711,314,''], ['smoke',828,314,''], ['flash',771,457,'']],
+        steps: [
+          'Игроки 1, 2, 3 идут на B Main. 4 и 5 идут через Mid в Cave.',
+          'Два смока закрывают оба прохода со стороны CT.',
+          'Флешка на сайт, B Main и Cave выходят одновременно. Игрок 3 прикрывает с B Main.',
+          'Ставим бомбу. Игрок 5 остаётся в Cave и смотрит Mid.'
+        ] },
+      { id: 'anc-ct', side: 'CT', name: 'Защита 2-1-2',
+        paths: [[[479,182],[424,213],[365,217],[295,299]],[[479,115],[436,154],[311,158],[287,197],[248,205],[225,229]],[[506,146],[529,248],[467,289],[467,320]],[[532,182],[541,264],[580,271],[627,256],[705,268],[721,357],[764,416],[756,447]],[[532,115],[537,260],[576,275],[627,256],[826,275],[787,432],[814,459]]],
+        util: [],
+        steps: [
+          'Расстановка 2-1-2: двое на A, один в Mid, двое на B.',
+          'На A игрок 1 играет сайт, игрок 2 смотрит A Main из глубины.',
+          'Игрок 3 держит Mid и первым даёт инфу про Donut и Cave.',
+          'На B игрок 4 на сайте, игрок 5 смотрит B Main. Ротация через CT Spawn.'
+        ] }
+    ]
+  },
+  anubis: {
+    name: 'Anubis', img: 'maps/anubis.webp', lift: 0,
+    tactics: [
+      { id: 'anu-a', side: 'T', name: 'Выход на A: Main и Mid',
+        paths: [[[445,917],[629,869],[651,761],[793,683],[779,533],[743,507],[761,465],[819,457],[839,337],[761,265]],[[497,917],[629,867],[651,761],[793,683],[779,533],[743,507],[761,465],[819,457],[839,339],[805,305]],[[471,943],[629,865],[651,761],[793,683],[779,533],[743,507],[761,465],[819,457],[839,337],[763,297],[735,325]],[[449,965],[311,833],[497,635],[513,477],[561,437],[601,381],[675,371],[705,287]],[[497,965],[629,857],[603,755],[497,659],[511,479],[561,437],[601,381],[679,369],[721,241]]],
+        util: [["smoke",641.0,241.0,""],["smoke",823.0,385.0,""],["flash",761.0,255.0,""]],
+        steps: [
+          'Игроки 1, 2, 3 идут через A Main.',
+          'Игроки 4 и 5 проходят Mid и выходят на A с другой стороны.',
+          'Два смока отрезают CT, флешка над сайтом, заходим одновременно.',
+          'Ставим бомбу и держим выходы из смоков.'
+        ] },
+      { id: 'anu-b', side: 'T', name: 'Выход на B через Main',
+        paths: [[[445,917],[319,859],[319,723],[199,579],[273,533],[339,517],[335,501]],[[497,917],[375,895],[313,833],[321,725],[199,579],[291,471]],[[471,943],[313,847],[321,725],[199,579],[273,533],[341,525]],[[449,965],[313,835],[321,725],[199,579],[261,521]],[[497,965],[629,857],[603,755],[495,657],[491,591]]],
+        util: [["smoke",331.0,407.0,""],["smoke",275.0,321.0,""],["flash",311.0,483.0,""]],
+        steps: [
+          'Игроки 1, 2, 3, 4 идут к B Main.',
+          'Игрок 5 держит Mid, чтобы защита не зашла в спину.',
+          'Два смока со стороны CT, флешка на сайт, заходим вчетвером.',
+          'Ставим бомбу. Игрок 5 подтягивается на B.'
+        ] },
+      { id: 'anu-ct', side: 'CT', name: 'Защита 2-1-2',
+        paths: [[[375,195],[337,253],[281,293],[299,457],[321,481]],[[427,195],[281,291],[273,489],[225,561]],[[401,221],[477,263],[485,421]],[[375,247],[479,255],[495,327],[559,341],[591,381],[677,371],[761,261]],[[427,247],[477,257],[495,327],[559,341],[591,381],[679,371],[801,299],[845,371],[819,413],[801,409]]],
+        util: [],
+        steps: [
+          'Расстановка 2-1-2: двое на B, один в Mid, двое на A.',
+          'На B игрок 1 играет сайт, игрок 2 смотрит выход из B Main.',
+          'Игрок 3 держит Mid и даёт инфу.',
+          'На A игрок 4 на сайте, игрок 5 смотрит A Main. Ротация только по инфе.'
+        ] }
+    ]
+  },
+  cache: {
+    name: 'Cache', img: 'maps/cache.webp', lift: 0,
+    tactics: [
+      { id: 'cache-a', side: 'T', name: 'Выход на A: Main и Mid',
+        paths: [[[897,553],[567,421],[515,435],[491,419],[457,249],[321,231]],[[949,553],[561,427],[499,431],[491,405],[457,249],[301,201]],[[923,579],[567,413],[543,435],[491,423],[457,249],[341,263]],[[897,605],[673,521],[349,503],[331,331]],[[949,605],[667,521],[349,503],[301,301]]],
+        util: [["smoke",231.0,331.0,""],["smoke",331.0,145.0,""],["flash",321.0,231.0,""]],
+        steps: [
+          'Игроки 1, 2, 3 идут через A Main.',
+          'Игроки 4 и 5 берут Mid и заходят на A слева.',
+          'Смоки со стороны CT, флешка над сайтом.',
+          'Заходим одновременно, ставим бомбу и держим выходы из смоков.'
+        ] },
+      { id: 'cache-b', side: 'T', name: 'Выход на B через Main',
+        paths: [[[897,553],[735,709],[549,699],[517,759],[437,719],[399,693],[351,801]],[[949,553],[715,709],[549,697],[519,759],[437,719],[397,691],[321,775]],[[923,579],[709,709],[549,697],[519,759],[437,719],[399,693],[381,831]],[[897,605],[673,521],[487,525],[401,561]],[[949,605],[809,659],[703,703],[623,685]]],
+        util: [["smoke",237.0,651.0,""],["smoke",291.0,561.0,""],["flash",341.0,801.0,""]],
+        steps: [
+          'Игроки 1, 2, 3 идут на B Main.',
+          'Игрок 4 держит Mid, игрок 5 прикрывает правый фланг.',
+          'Два смока со стороны CT, флешка на сайт.',
+          'Ставим бомбу, 4 и 5 подтягиваются и держат выходы.'
+        ] },
+      { id: 'cache-ct', side: 'CT', name: 'Защита 2-1-2',
+        paths: [[[57,503],[177,521],[217,329],[321,275],[321,231]],[[109,503],[167,527],[219,331],[231,331]],[[83,529],[265,539],[303,571],[341,541]],[[57,555],[191,637],[245,743],[311,769],[341,801]],[[109,555],[259,651],[269,691]]],
+        util: [],
+        steps: [
+          'Расстановка 2-1-2: двое на A, один в Mid, двое на B.',
+          'На A игрок 1 играет сайт, игрок 2 стоит ближе к CT и помогает Mid.',
+          'Игрок 3 держит Mid.',
+          'На B игрок 4 на сайте, игрок 5 ближе к CT. Ротация через CT Spawn.'
+        ] }
+    ]
+  },
+  custom: { name: 'Своя карта', tactics: [] }
+};
+const MAP_IDS = Object.keys(MAPS);
+
+const TOOLS = [
+  ['pen', 'Линия', '<path d="M4 17c3-7 5 3 8-3s4-6 8-4"/>'],
+  ['arrow', 'Стрелка', '<path d="M5 19 19 5M19 5h-7M19 5v7"/>'],
+  ['player', 'Игрок', '<circle cx="12" cy="12" r="8"/><path d="M11 9.5 12.6 8.4V16"/>'],
+  ['smoke', 'Смок', '<circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity=".35"/>'],
+  ['molly', 'Молотов', '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1 1 2 1 3-4z"/>'],
+  ['flash', 'Флешка', '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>'],
+  ['eraser', 'Ластик', '<path d="m5 15 8-8 6 6-5 5H8zM4 21h16"/>']
+];
+
+/* ================= state ================= */
+
+const S = { map: 'mirage', tac: {}, ep: {}, bg: null };
+let stateExists = false;
+let db = null, room = null, user = null, assets = null, uid = null;
+let readOnly = false, emitOk = true;
+let tool = 'pen', color = 0;
+let syncState = 'wait', peerCount = 0;
+
+const remote = new Map();     // committed strokes of the open map, from the store
+const pending = new Map();    // my strokes waiting for the store
+const hidden = new Set();     // ids I erased, until the store agrees
+const locals = {};            // mapId -> Map, used while there is no store
+const live = new Map();       // peer -> { s, at, fin } strokes in progress elsewhere
+const myStack = [];
+let cur = null;               // stroke under my finger
+let cache = null;
+let bgImg = null, bgKey = null, localBgUrl = null;
+
+const $ = (id) => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+
+const epoch = (m = S.map) => (Number.isInteger(S.ep[m]) ? S.ep[m] : 0);
+const localMap = (m = S.map) => (locals[m] || (locals[m] = new Map()));
+const newId = () => {
+  const a = new Uint32Array(3);
+  crypto.getRandomValues(a);
+  return Array.from(a, (n) => n.toString(36)).join('').slice(0, 18).padEnd(8, '0');
+};
+
+function currentTac() {
+  const m = MAPS[S.map];
+  const v = S.tac[S.map];
+  if (v === undefined) return (!stateExists && m.tactics.length) ? m.tactics[0] : null;
+  return m.tactics.find((t) => t.id === v) || null;
+}
+
+/* ================= untrusted input ================= */
+
+const KINDS = new Set(['pen', 'arrow', 'player', 'smoke', 'molly', 'flash']);
+function sanitize(id, d, m) {
+  if (!d || typeof d !== 'object' || !/^[A-Za-z0-9]{6,40}$/.test(String(id))) return null;
+  if (!KINDS.has(d.k) || !Array.isArray(d.p)) return null;
+  const n = d.p.length;
+  if (n < 2 || n % 2 || n > 8000) return null;
+  const p = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const v = Number(d.p[i]);
+    if (!Number.isFinite(v)) return null;
+    p[i] = Math.max(-40, Math.min(1040, v));
+  }
+  if (d.k === 'arrow' && n < 4) return null;
+  const c = Number.isInteger(d.c) && d.c >= 0 && d.c < COLORS.length ? d.c : 5;
+  return { id: String(id), m, k: d.k, c, p, e: Number.isInteger(d.e) ? d.e : 0, t: Number.isFinite(d.t) ? d.t : 0 };
+}
+const plainObj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+
+/* ================= strokes ================= */
+
+function invalidate() { cache = null; requestDraw(); }
+
+function strokes() {
+  if (cache) return cache;
+  const ep = epoch(), out = [], seen = new Set();
+  const src = db ? remote : localMap();
+  for (const s of src.values()) if (s.e === ep && !hidden.has(s.id)) { out.push(s); seen.add(s.id); }
+  for (const s of pending.values()) if (s.m === S.map && s.e === ep && !seen.has(s.id) && !hidden.has(s.id)) out.push(s);
+  out.sort((a, b) => a.t - b.t || (a.id < b.id ? -1 : 1));
+  return (cache = out);
+}
+
+const strokeRef = (m, id) => db.collection('boards/' + m + '/strokes').doc(id);
+
+function commit(s) {
+  s.t = Date.now();
+  myStack.push({ id: s.id, m: s.m });
+  if (!db) { localMap(s.m).set(s.id, s); invalidate(); return; }
+  pending.set(s.id, s);
+  invalidate();
+  const body = { k: s.k, c: s.c, p: s.p, e: s.e, t: s.t };
+  if (uid) body.by = uid;
+  strokeRef(s.m, s.id).set(body).then(
+    () => setTimeout(() => { if (pending.delete(s.id)) invalidate(); }, 60000),
+    (err) => { pending.delete(s.id); invalidate(); writeFailed(err); }
+  );
+}
+
+function removeStroke(s) {
+  pending.delete(s.id);
+  if (!db) { localMap(s.m).delete(s.id); invalidate(); return; }
+  hidden.add(s.id);
+  invalidate();
+  strokeRef(s.m, s.id).delete().catch((err) => { hidden.delete(s.id); invalidate(); writeFailed(err); });
+}
+
+function undo() {
+  const visible = new Map(strokes().map((s) => [s.id, s]));
+  while (myStack.length) {
+    const top = myStack.pop();
+    if (top.m === S.map && visible.has(top.id)) { removeStroke(visible.get(top.id)); return; }
+  }
+  toast('Твоих рисунков на этой карте нет.');
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function clearBoard() {
+  const m = S.map;
+  if (!db) { localMap(m).clear(); writeState({ tac: { [m]: null } }); return; }
+  const old = [...remote.keys()];
+  writeState({ ep: { [m]: epoch(m) + 1 }, tac: { [m]: null } });   // drawings and the ready-made play go for everyone
+  for (const id of old) {           // tidy the store in the background; the board is already clean for everyone
+    try { await strokeRef(m, id).delete(); } catch (e) { break; }
+    await sleep(120);
+  }
+}
+
+function writeFailed(err) {
+  const code = err && err.code;
+  if (code === 'invalid_argument' || code === 'revoked' || code === 'not_granted') {
+    setReadOnly(true);
+    toast('Не сохранилось: у тебя доступ только на просмотр.');
+  } else if (code === 'quota_exceeded') {
+    toast('Доска переполнена. Очисти старые рисунки и попробуй снова.');
+  } else if (code === 'resource_exhausted') {
+    toast('Слишком быстро. Подожди пару секунд и повтори.');
+  } else {
+    toast('Не сохранилось. Проверь связь и попробуй ещё раз.');
+  }
+}
+
+/* ================= shared state doc ================= */
+
+function merge(dst, patch) {
+  for (const k of Object.keys(patch)) {
+    const v = patch[k];
+    if (v && typeof v === 'object' && !Array.isArray(v)) { dst[k] = plainObj(dst[k]); merge(dst[k], v); }
+    else dst[k] = v;
+  }
+}
+
+let stateQ = Promise.resolve();
+function writeState(patch) {
+  const before = S.map;
+  merge(S, patch);
+  onState(before);
+  if (!db) return;
+  const ref = db.doc('live/state');
+  const full = () => ({ map: S.map, tac: S.tac, ep: S.ep, bg: S.bg });
+  stateQ = stateQ.then(() => {
+    if (!stateExists) return ref.set(full()).then(() => { stateExists = true; });
+    return ref.update(patch).catch((e) => (e && e.code === 'invalid_argument' ? ref.set(full()) : Promise.reject(e)));
+  }).catch(writeFailed);
+}
+
+function applyRemoteState(d) {
+  const before = S.map;
+  S.map = MAPS[d.map] ? d.map : 'mirage';
+  S.tac = {}; S.ep = {};
+  const tac = plainObj(d.tac), ep = plainObj(d.ep);
+  for (const m of MAP_IDS) {
+    if (m in tac) S.tac[m] = typeof tac[m] === 'string' ? tac[m] : null;
+    if (Number.isInteger(ep[m]) && ep[m] >= 0) S.ep[m] = ep[m];
+  }
+  S.bg = typeof d.bg === 'string' && /^[A-Za-z0-9_.~:@+-]{1,200}$/.test(d.bg) ? d.bg : null;
+  onState(before);
+}
+
+function onState(before) {
+  if (before !== S.map) { cur = null; subscribeStrokes(); view.z = 1; view.x = 0; view.y = 0; setStageShape(); resize(); }
+  loadBg();
+  renderMaps();
+  renderPlays();
+  invalidate();
+}
+
+/* ================= sync wiring ================= */
+
+let liveTimer = null;
+function setSync(state) {
+  syncState = state;
+  const el = $('sync');
+  el.dataset.state = state;
+  const online = peerCount > 1 ? ' · в сети ' + peerCount : '';
+  $('syncText').textContent = ({
+    wait: 'Подключаюсь к доске',
+    live: 'Команда видит доску' + online,
+    stale: 'Нет связи, доска может отставать',
+    local: 'Нет связи с сервером: рисунки видишь только ты',
+    off: 'Синхронизация отключена'
+  })[state];
+}
+function markLive() { clearTimeout(liveTimer); liveTimer = null; if (syncState !== 'off') setSync('live'); }
+function syncError() { clearTimeout(liveTimer); setSync('off'); }
+
+let unsubStrokes = null, subMap = null;
+function subscribeStrokes() {
+  if (!db || subMap === S.map) return;
+  if (unsubStrokes) unsubStrokes();
+  remote.clear();
+  const m = (subMap = S.map);
+  unsubStrokes = db.collection('boards/' + m + '/strokes').onSnapshot((snap) => {
+    if (subMap !== m) return;
+    remote.clear();
+    for (const doc of snap.docs) {
+      const s = sanitize(doc.id, doc.data(), m);
+      if (s) remote.set(s.id, s);
+    }
+    for (const id of [...pending.keys()]) if (remote.has(id)) pending.delete(id);
+    for (const id of [...hidden]) if (!remote.has(id)) hidden.delete(id);
+    invalidate();
+    if (!snap.metadata.fromCache) markLive();
+  }, syncError);
+}
+
+function startDb(d) {
+  db = d;
+  setSync('wait');
+  liveTimer = setTimeout(() => { if (syncState === 'wait') setSync('stale'); }, 10000);
+  db.doc('live/state').onSnapshot((snap) => {
+    stateExists = snap.exists;
+    applyRemoteState(snap.exists ? plainObj(snap.data()) : {});
+    if (!snap.metadata.fromCache) markLive();
+  }, syncError);
+  subscribeStrokes();
+  // anything sketched before the store answered goes to the team now
+  for (const m of MAP_IDS) {
+    const mine = locals[m];
+    if (!mine) continue;
+    for (const s of mine.values()) { s.e = epoch(m); commit(s); }
+    mine.clear();
+  }
+  invalidate();
+}
+
+function startRoom(r) {
+  room = r;
+  room.on('stroke', (msg) => {
+    if (msg.isMe && msg.sameTab) return;
+    const d = msg.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.x) { live.delete(msg.peer); requestDraw(); return; }
+    if (!MAPS[d.m]) return;
+    const s = sanitize(d.id, d, d.m);
+    if (!s) return;
+    live.set(msg.peer, { s, at: performance.now(), fin: !!d.fin });
+    requestDraw();
+  }, () => {});
+  room.onPeers((ch) => renderPeers(ch.peers), () => {});
+  room.presence({ c: color }).catch(() => {});
+}
+
+let lastEmit = 0;
+function emitLive(fin) {
+  if (!room || !emitOk || readOnly || !cur) return;
+  const now = performance.now();
+  if (!fin && now - lastEmit < 90) return;
+  lastEmit = now;
+  let p = cur.p;
+  if (p.length > 360) {               // a live preview stays under the message size cap
+    const n = p.length / 2, q = [];
+    for (let i = 0; i < 180; i++) { const j = Math.round(i * (n - 1) / 179) * 2; q.push(p[j], p[j + 1]); }
+    p = q;
+  }
+  room.emit('stroke', { id: cur.id, m: cur.m, e: cur.e, k: cur.k, c: cur.c, p, fin: fin ? 1 : 0 })
+    .catch((e) => { if (e && e.code === 'not_permitted') emitOk = false; });
+}
+function emitCancel() { if (room && emitOk && !readOnly) room.emit('stroke', { x: 1 }).catch(() => {}); }
+
+let peersSeq = 0;
+async function renderPeers(peers) {
+  const seq = ++peersSeq;
+  const people = new Map();
+  for (const p of peers) {
+    if (p.kind !== 'viewer') continue;
+    const key = p.by || p.peer;
+    const prev = people.get(key);
+    if (!prev || p.isMe) people.set(key, p);
+  }
+  peerCount = people.size;
+  setSync(syncState);
+  let names = {};
+  const ids = [...people.values()].map((p) => p.by).filter(Boolean);
+  if (user && ids.length) { try { names = (await user.profiles(ids)) || {}; } catch (e) { names = {}; } }
+  if (seq !== peersSeq) return;
+  const box = $('peers');
+  box.textContent = '';
+  if (people.size < 2) return;
+  const list = [...people.values()].sort((a, b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0)).slice(0, 6);
+  for (const p of list) {
+    const name = (p.by && names[p.by] && names[p.by].name) || '';
+    const el = document.createElement('span');
+    const c = p.presence && Number.isInteger(p.presence.c) ? p.presence.c : 5;
+    el.style.background = COLORS[c] || COLORS[5];
+    el.textContent = p.isMe ? 'я' : (name ? name.trim().charAt(0).toUpperCase() : '•');
+    el.title = p.isMe ? 'Ты' : (name || 'Тиммейт');
+    if (p.isMe) el.className = 'me';
+    box.appendChild(el);
+  }
+}
+
+function setReadOnly(v) {
+  if (readOnly === v) return;
+  readOnly = v;
+  cur = null;
+  $('roNote').hidden = !v;
+  $('tools').hidden = v;
+  stage.classList.toggle('readonly', v);
+  renderMaps(); renderPlays(); invalidate();
+}
+
+/* ================= custom background ================= */
+
+function loadBg() {
+  const key = S.map !== 'custom' ? null : (S.bg ? '/_blob/' + S.bg : localBgUrl);
+  if (key === bgKey) return;
+  bgKey = key; bgImg = null;
+  if (!key) return;
+  const img = new Image();
+  img.onload = () => { if (bgKey === key) { bgImg = img; renderPlays(); invalidate(); } };
+  img.onerror = () => { if (bgKey === key) toast('Не получилось показать фон карты.'); };
+  img.src = key;
+}
+
+async function pickBg(file) {
+  if (!file) return;
+  let bmp;
+  try { bmp = await createImageBitmap(file); } catch (e) { toast('Это не картинка. Нужен PNG или JPG.'); return; }
+  const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
+  if (!blob) { toast('Не получилось подготовить картинку.'); return; }
+  if (assets && db) {
+    toast('Загружаю фон…');
+    try {
+      const old = S.bg;
+      const up = await assets.upload(blob);
+      writeState({ bg: up.id });
+      toast('Фон обновлён для всей команды.');
+      if (old) assets.delete(old).catch(() => {});
+    } catch (e) { toast('Фон не загрузился. Попробуй картинку поменьше.'); }
+  } else {
+    if (localBgUrl) URL.revokeObjectURL(localBgUrl);
+    localBgUrl = URL.createObjectURL(blob);
+    loadBg(); renderPlays(); invalidate();
+  }
+}
+
+/* ================= drawing ================= */
+
+let size = 0, dpr = 1, raf = 0;
+const view = { z: 1, x: 0, y: 0 };   // this viewer's zoom and pan, in map units; never shared
+const mapH = (m = S.map) => (MAPS[m] && MAPS[m].h) || 1000;
+function requestDraw() { if (!raf) raf = requestAnimationFrame(draw); }
+
+function setStageShape() {
+  const h = mapH();
+  stage.style.aspectRatio = '1000 / ' + h;
+  stage.style.maxWidth = h < 800 ? 'none' : '';   // wide maps (Nuke, both levels) get the full column
+}
+function resize() {
+  const w = stage.clientWidth;
+  if (!w) return;
+  size = w; dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * mapH() / 1000 * dpr);
+  clampView();
+  requestDraw();
+}
+function clampView() {
+  const H = mapH();
+  view.z = Math.min(5, Math.max(1, view.z));
+  view.x = Math.min(Math.max(0, view.x), 1000 - 1000 / view.z);
+  view.y = Math.min(Math.max(0, view.y), H - H / view.z);
+  $('zoomReset').hidden = view.z < 1.02;
+}
+function resetView() { view.z = 1; view.x = 0; view.y = 0; clampView(); requestDraw(); }
+function toMap(cx, cy) {
+  const b = cv.getBoundingClientRect(), k = 1000 / b.width / view.z;
+  return [view.x + (cx - b.left) * k, view.y + (cy - b.top) * k];
+}
+function zoomAround(cx, cy, z, anchor) {
+  const b = cv.getBoundingClientRect();
+  const p = anchor || toMap(cx, cy);
+  view.z = Math.min(5, Math.max(1, z));
+  const k = 1000 / b.width / view.z;
+  view.x = p[0] - (cx - b.left) * k; view.y = p[1] - (cy - b.top) * k;
+  clampView(); requestDraw();
+}
+
+const mapImgs = {};
+function mapImage(m) {
+  let rec = mapImgs[m.img];
+  if (!rec) {
+    rec = mapImgs[m.img] = { img: new Image(), ok: false };
+    rec.img.onload = () => { rec.ok = true; requestDraw(); };
+    rec.img.src = m.img;
+  }
+  return rec.ok ? rec.img : null;
+}
+
+function drawMap(m, k) {
+  const H = mapH();
+  ctx.fillStyle = '#0a0f12';
+  ctx.fillRect(0, 0, 1000, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.04)';
+  ctx.lineWidth = 1 / k;
+  ctx.beginPath();
+  for (let i = 100; i < 1000; i += 100) { ctx.moveTo(i, 0); ctx.lineTo(i, H); }
+  for (let i = 100; i < H; i += 100) { ctx.moveTo(0, i); ctx.lineTo(1000, i); }
+  ctx.stroke();
+
+  if (S.map === 'custom') {
+    if (bgImg) {
+      const f = Math.min(1000 / bgImg.width, 1000 / bgImg.height);
+      const w = bgImg.width * f, h = bgImg.height * f;
+      ctx.drawImage(bgImg, (1000 - w) / 2, (1000 - h) / 2, w, h);
+    }
+    return;
+  }
+  const img = m.img && mapImage(m);
+  if (!img) return;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, 1000, H);
+  if (m.lift) {                       // lift dark radars off the dark table
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = m.lift;
+    ctx.drawImage(img, 0, 0, 1000, H);
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+function penPath(p) {
+  ctx.beginPath();
+  ctx.moveTo(p[0], p[1]);
+  if (p.length === 2) { ctx.lineTo(p[0] + 0.01, p[1]); return; }
+  for (let i = 2; i < p.length - 2; i += 2) {
+    ctx.quadraticCurveTo(p[i], p[i + 1], (p[i] + p[i + 2]) / 2, (p[i + 1] + p[i + 3]) / 2);
+  }
+  ctx.lineTo(p[p.length - 2], p[p.length - 1]);
+}
+function arrowHead(x1, y1, x2, y2, len) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - len * Math.cos(a - 0.45), y2 - len * Math.sin(a - 0.45));
+  ctx.lineTo(x2 - len * Math.cos(a + 0.45), y2 - len * Math.sin(a + 0.45));
+  ctx.closePath();
+}
+function inked(colorStr, w, pathFn) {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  pathFn(); ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = w + 4; ctx.stroke();
+  pathFn(); ctx.strokeStyle = colorStr; ctx.lineWidth = w; ctx.stroke();
+}
+function stamp(k, x, y, c, s) {
+  if (k === 'smoke') {
+    ctx.beginPath(); ctx.arc(x, y, 38, 0, 7);
+    ctx.fillStyle = 'rgba(214,220,224,.5)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2.5; ctx.stroke();
+  } else if (k === 'molly') {
+    ctx.beginPath(); ctx.arc(x, y, 30, 0, 7);
+    ctx.fillStyle = 'rgba(242,104,36,.5)'; ctx.fill();
+    ctx.strokeStyle = '#ff9a4d'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fillStyle = '#ffd08a'; ctx.fill();
+  } else if (k === 'flash') {
+    ctx.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const r = i % 2 ? 9 : 23, a = i * Math.PI / 8;
+      ctx[i ? 'lineTo' : 'moveTo'](x + r * Math.sin(a), y - r * Math.cos(a));
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#fff3b0'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 2; ctx.stroke();
+  } else if (k === 'player') {
+    const r = Math.max(19, 9 / s);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
+    ctx.fillStyle = COLORS[c]; ctx.fill();
+    ctx.strokeStyle = '#0c1215'; ctx.lineWidth = 3; ctx.stroke();
+    if (c < 5) {
+      ctx.fillStyle = '#10181b'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '700 ' + r * 1.15 + 'px Tektur, "Arial Narrow", sans-serif';
+      ctx.fillText(String(c + 1), x, y + r * 0.08);
+    }
+  }
+}
+function drawStroke(st, s) {
+  const p = st.p, col = COLORS[st.c];
+  if (st.k === 'pen') inked(col, 6, () => penPath(p));
+  else if (st.k === 'arrow') {
+    const [x1, y1, x2, y2] = p;
+    inked(col, 6, () => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); });
+    arrowHead(x1, y1, x2, y2, 30);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+  } else stamp(st.k, p[0], p[1], st.c, s);
+}
+
+function drawTactic(t, s) {
+  for (const u of t.util) stamp(u[0], u[1], u[2], 5, s);
+  t.paths.forEach((path, i) => {
+    const col = COLORS[i];
+    // a point marked as a jump starts the same player's route on the other level (Nuke): link it faintly
+    for (let j = 1; j < path.length; j++) {
+      if (!path[j][2]) continue;
+      const a = path[j - 1], b = path[j];
+      ctx.save();
+      ctx.globalAlpha = 0.5; ctx.setLineDash([2, 10]); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(b[0], b[1], 10, 0, 7);
+      ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 6; ctx.stroke();
+      ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+    }
+    const line = () => { ctx.beginPath(); path.forEach((q, j) => ctx[j && !q[2] ? 'lineTo' : 'moveTo'](q[0], q[1])); };
+    ctx.lineCap = 'butt'; ctx.lineJoin = 'round';
+    ctx.setLineDash([]); line(); ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 8; ctx.stroke();
+    ctx.setLineDash([14, 12]); ctx.lineDashOffset = i * 9; line(); ctx.strokeStyle = col; ctx.lineWidth = 4.5; ctx.stroke();
+    ctx.setLineDash([]); ctx.lineDashOffset = 0;   // shifted dashes keep routes readable where players share a corridor
+    const a = path[path.length - 2], b = path[path.length - 1];
+    arrowHead(a[0], a[1], b[0], b[1], 26);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+  });
+  t.paths.forEach((path, i) => stamp('player', path[0][0], path[0][1], i, s * 1.25));
+}
+
+function draw() {
+  raf = 0;
+  if (!size) return;
+  const k = size / 1000 * view.z;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#0a0f12';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(dpr * k, 0, 0, dpr * k, -view.x * dpr * k, -view.y * dpr * k);
+  const m = MAPS[S.map];
+  drawMap(m, k);
+  const t = currentTac();
+  if (t) drawTactic(t, k);
+  for (const st of strokes()) drawStroke(st, k);
+
+  const now = performance.now(), ep = epoch();
+  let again = false;
+  for (const [peer, l] of live) {
+    if (now - l.at > (l.fin ? 6000 : 2500) || remote.has(l.s.id)) { live.delete(peer); continue; }
+    again = true;
+    if (l.s.m !== S.map || l.s.e !== ep) continue;
+    ctx.globalAlpha = 0.8; drawStroke(l.s, k); ctx.globalAlpha = 1;
+  }
+  if (cur) drawStroke(cur, k);
+  if (again) setTimeout(requestDraw, 400);
+
+  $('customEmpty').hidden = !(S.map === 'custom' && !bgKey);
+}
+
+/* ================= pointer input ================= */
+
+const r1 = (v) => Math.round(v * 10) / 10;
+function pos(e) { const p = toMap(e.clientX, e.clientY); return [r1(p[0]), r1(p[1])]; }
+function segDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy;
+  let t = l ? ((px - x1) * dx + (py - y1) * dy) / l : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - x1 - t * dx, py - y1 - t * dy);
+}
+function hit(st, x, y) {
+  const p = st.p, pad = Math.max(8, 14 / (size / 1000 * view.z));
+  if (st.k === 'pen' || st.k === 'arrow') {
+    if (p.length === 2) return Math.hypot(x - p[0], y - p[1]) < pad;
+    for (let i = 0; i < p.length - 2; i += 2) if (segDist(x, y, p[i], p[i + 1], p[i + 2], p[i + 3]) < pad) return true;
+    return false;
+  }
+  const r = st.k === 'smoke' ? 38 : st.k === 'molly' ? 30 : 24;
+  return Math.hypot(x - p[0], y - p[1]) < r + pad * 0.4;
+}
+function eraseAt(x, y) {
+  const arr = strokes();
+  for (let i = arr.length - 1; i >= 0; i--) if (hit(arr[i], x, y)) { removeStroke(arr[i]); return; }
+}
+
+let erasing = false, activePointer = null;
+const fingers = new Map();
+let pinch = null, held = false;   // held: a pinch happened, wait until every finger lifts before drawing again
+
+function startPinch() {
+  if (cur) { cur = null; emitCancel(); }
+  erasing = false; activePointer = null; held = true;
+  const [a, b] = [...fingers.values()];
+  const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, z: view.z, p: toMap(mid[0], mid[1]) };
+  requestDraw();
+}
+
+cv.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  fingers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (fingers.size === 2 && e.pointerType !== 'mouse') { startPinch(); return; }
+  if (fingers.size > 1 || held || readOnly || activePointer !== null) return;
+  activePointer = e.pointerId;
+  const [x, y] = pos(e);
+  if (tool === 'eraser') { erasing = true; eraseAt(x, y); return; }
+  cur = { id: newId(), m: S.map, k: tool, c: color, e: epoch(), t: Date.now(), p: tool === 'arrow' ? [x, y, x, y] : [x, y] };
+  emitLive(false);
+  requestDraw();
+});
+cv.addEventListener('pointermove', (e) => {
+  if (fingers.has(e.pointerId)) fingers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pinch && fingers.size >= 2) {
+    const [a, b] = [...fingers.values()];
+    const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    zoomAround((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, pinch.z * d / pinch.d, pinch.p);
+    return;
+  }
+  if (e.pointerId !== activePointer) return;
+  const [x, y] = pos(e);
+  if (erasing) { eraseAt(x, y); return; }
+  if (!cur) return;
+  const p = cur.p;
+  if (cur.k === 'pen') {
+    const n = p.length;
+    if (Math.hypot(x - p[n - 2], y - p[n - 1]) < 2.5 / view.z || n >= 7998) return;
+    p.push(x, y);
+  } else if (cur.k === 'arrow') { p[2] = x; p[3] = y; }
+  else { p[0] = x; p[1] = y; }
+  emitLive(false);
+  requestDraw();
+});
+function endPointer(e, cancelled) {
+  fingers.delete(e.pointerId);
+  if (fingers.size < 2) pinch = null;
+  if (!fingers.size) held = false;
+  if (e.pointerId !== activePointer) return;
+  activePointer = null;
+  if (erasing) { erasing = false; return; }
+  if (!cur) return;
+  const s = cur;
+  const tooShort = s.k === 'arrow' && Math.hypot(s.p[2] - s.p[0], s.p[3] - s.p[1]) < 14 / view.z;
+  if (cancelled || tooShort || s.m !== S.map) { cur = null; emitCancel(); requestDraw(); return; }
+  emitLive(true);
+  cur = null;
+  commit(s);
+}
+cv.addEventListener('pointerup', (e) => endPointer(e, false));
+cv.addEventListener('pointercancel', (e) => endPointer(e, true));
+
+// trackpad pinch and Ctrl+wheel zoom; plain wheel pans once zoomed in, otherwise the page scrolls
+cv.addEventListener('wheel', (e) => {
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+  if (e.ctrlKey) {
+    e.preventDefault();
+    zoomAround(e.clientX, e.clientY, view.z * Math.exp(-e.deltaY * unit * 0.01));
+  } else if (view.z > 1.02) {
+    e.preventDefault();
+    const k = 1000 / cv.getBoundingClientRect().width / view.z;
+    view.x += e.deltaX * unit * k; view.y += e.deltaY * unit * k;
+    clampView(); requestDraw();
+  }
+}, { passive: false });
+function zoomStep(f) {
+  const b = cv.getBoundingClientRect();
+  zoomAround(b.left + b.width / 2, b.top + b.height / 2, view.z * f);
+}
+$('zoomReset').addEventListener('click', resetView);
+
+/* ================= UI ================= */
+
+function renderMaps() {
+  const nav = $('maps');
+  nav.textContent = '';
+  for (const id of MAP_IDS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(id === S.map));
+    b.textContent = MAPS[id].name;
+    b.disabled = readOnly;
+    b.addEventListener('click', () => { if (id !== S.map) writeState({ map: id }); });
+    nav.appendChild(b);
+    if (id === S.map) requestAnimationFrame(() => {
+      if (b.offsetLeft < nav.scrollLeft || b.offsetLeft + b.offsetWidth > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = Math.max(0, b.offsetLeft - 16);
+    });
+  }
+}
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+function renderPlays() {
+  const box = $('plays');
+  box.textContent = '';
+  const m = MAPS[S.map];
+  if (S.map === 'custom') {
+    box.appendChild(el('h2', '', 'Своя карта'));
+    const canUpload = !readOnly;
+    box.appendChild(el('p', 'note', bgKey
+      ? 'Готовых тактик для своей карты нет. Рисуйте с нуля поверх загруженного фона.'
+      : 'Сюда можно загрузить скриншот радара любой карты, которой нет в списке.'));
+    if (canUpload && bgKey) {
+      const lab = el('label', 'btn ghost file');
+      lab.appendChild(el('span', '', 'Заменить фон'));
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'bgFile2';
+      inp.addEventListener('change', () => { pickBg(inp.files[0]); inp.value = ''; });
+      lab.appendChild(inp);
+      box.appendChild(lab);
+    }
+    if (!canUpload) box.appendChild(el('p', 'note', 'Фон загружает владелец доски или редактор.'));
+    if (!assets) box.appendChild(el('p', 'note', 'Фон виден только на этом устройстве. Остальные видят рисунки на пустой сетке.'));
+    $('uploadWrap').hidden = !canUpload;
+    $('customEmptyText').textContent = canUpload
+      ? 'Загрузи скриншот радара любой карты и рисуйте поверх него.'
+      : 'Фон пока не загружен. Рисовать можно и на пустой сетке.';
+    return;
+  }
+  box.appendChild(el('h2', '', 'Готовые тактики · ' + m.name));
+  const active = currentTac();
+  for (const t of m.tactics) {
+    const on = active && active.id === t.id;
+    const b = el('button', 'play');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(!!on));
+    b.disabled = readOnly;
+    b.appendChild(el('span', 'side' + (t.side === 'CT' ? ' ct' : ''), t.side));
+    b.appendChild(el('span', 'name', t.name));
+    b.appendChild(el('span', 'state', on ? 'на доске' : 'показать'));
+    b.addEventListener('click', () => writeState({ tac: { [S.map]: on ? null : t.id } }));
+    box.appendChild(b);
+    if (on) {
+      const ol = el('ol', 'steps');
+      for (const step of t.steps) ol.appendChild(el('li', '', step));
+      box.appendChild(ol);
+    }
+  }
+  box.appendChild(el('p', 'note', active
+    ? 'Нажми на тактику ещё раз, чтобы убрать её с доски. Тактику видят все.'
+    : 'Выбери тактику, и она появится на карте у всей команды.'));
+}
+
+function renderTools() {
+  const row = $('toolRow');
+  for (const [id, label, icon] of TOOLS) {
+    const b = el('button', 'tool');
+    b.type = 'button'; b.dataset.tool = id;
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + icon + '</svg>';
+    b.appendChild(el('span', '', label));
+    b.addEventListener('click', () => { tool = id; syncTools(); });
+    row.appendChild(b);
+  }
+  const crow = $('colorRow');
+  COLORS.forEach((c, i) => {
+    const b = el('button', 'swatch');
+    b.type = 'button'; b.dataset.color = i;
+    b.setAttribute('aria-label', COLOR_NAMES[i]);
+    const dot = el('span', '', i < 5 ? String(i + 1) : '');
+    dot.style.background = c;
+    b.appendChild(dot);
+    b.addEventListener('click', () => {
+      color = i; syncTools();
+      if (room) room.presence({ c: color }).catch(() => {});
+    });
+    crow.appendChild(b);
+  });
+  crow.appendChild(el('span', 'spacer'));
+  const mk = (label, icon, cls, fn) => {
+    const b = el('button', 'tool act ' + cls);
+    b.type = 'button'; b.setAttribute('aria-label', label); b.title = label;
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + icon + '</svg>';
+    b.appendChild(el('span', '', label));
+    b.addEventListener('click', fn);
+    crow.appendChild(b);
+  };
+  mk('Ближе', '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M10.5 7.5v6M7.5 10.5h6"/>', 'zoombtn', () => zoomStep(1.5));
+  mk('Дальше', '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M7.5 10.5h6"/>', 'zoombtn', () => zoomStep(1 / 1.5));
+  mk('Отменить', '<path d="M8 5 3 10l5 5M3 10h11a5.5 5.5 0 0 1 0 11h-3"/>', '', undo);
+  mk('Очистить', '<path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/>', 'warn', () => {
+    if (!strokes().length && !currentTac()) { toast('Доска уже чистая.'); return; }
+    $('veil').hidden = false; $('dlgNo').focus();
+  });
+  syncTools();
+}
+function syncTools() {
+  for (const b of $('toolRow').children) b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
+  for (const b of $('colorRow').querySelectorAll('.swatch')) b.setAttribute('aria-pressed', String(Number(b.dataset.color) === color));
+}
+
+let toastTimer = null;
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 3600);
+}
+
+$('dlgNo').addEventListener('click', () => { $('veil').hidden = true; });
+$('dlgYes').addEventListener('click', () => { $('veil').hidden = true; clearBoard(); });
+$('veil').addEventListener('click', (e) => { if (e.target === $('veil')) $('veil').hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('veil').hidden = true; });
+$('bgFile').addEventListener('change', (e) => { pickBg(e.target.files[0]); e.target.value = ''; });
+
+/* ================= boot ================= */
+
+function start(saved) {
+  if (saved && TOOLS.some((t) => t[0] === saved.tool)) tool = saved.tool;
+  if (saved && Number.isInteger(saved.color) && saved.color >= 0 && saved.color < COLORS.length) color = saved.color;
+  renderTools(); renderMaps(); renderPlays();
+  setStageShape();
+  new ResizeObserver(resize).observe(stage);
+  resize();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestDraw);
+
+  const cl = window.claude;
+  const use = (name) => (cl && typeof cl.use === 'function'
+    ? Promise.resolve().then(() => cl.use(name)).catch(() => null)
+    : Promise.resolve(null));
+
+  use('user').then(async (u) => {
+    user = u;
+    if (!u) return;
+    try { uid = await u.id(); } catch (e) {}
+    try { if ((await u.can('data.write')) === false) setReadOnly(true); } catch (e) {}
+  });
+  use('db').then((d) => { if (d) startDb(d); else setSync('local'); });
+  use('room').then((r) => { if (r) startRoom(r); });
+  use('assets').then((a) => { assets = a; renderPlays(); });
+}
+
+const hot = window.claude && window.claude.hot;
+if (hot && hot.snapshot) hot.snapshot(() => ({ tool, color }));
+if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>
