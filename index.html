@@ -258,6 +258,79 @@ button:focus-visible, a:focus-visible, label:focus-within {
 .play .state { font-size: 12px; color: var(--muted); flex: none; }
 .play[aria-pressed="true"] { border-color: var(--t-side); background: rgba(227,165,58,.1); }
 .play[aria-pressed="true"] .state { color: var(--t-side); }
+.seg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  padding: 4px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--line);
+}
+.seg button {
+  padding: 8px 10px; border-radius: 7px; border: 0; background: transparent;
+  font-family: var(--display); font-weight: 600; font-size: 13.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted);
+}
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel-2);
+  font-size: 13.5px; font-weight: 500;
+}
+.chip i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.chip small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { border-color: var(--t-side); background: rgba(227,165,58,.12); }
+.play .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; margin: 0 9px 0 4px; }
+.place-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  max-width: 760px; padding: 10px 12px;
+  border: 1px solid var(--t-side); border-radius: 8px;
+  background: rgba(227,165,58,.1);
+}
+.place-bar p { margin: 0; flex: 1 1 200px; font-size: 14px; }
+.place-bar p b { font-family: var(--display); color: var(--t-side); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.place-bar .btn { padding: 7px 12px; font-size: 13.5px; }
+.tools.nades #toolRow, .tools.nades .swatch, .tools.nades .tool.act:not(.zoombtn), .tools.nades .spacer { display: none; }
+
+#nadeVeil { grid-template-columns: minmax(0, 1fr); justify-items: center; padding: 10px; }
+.sheet {
+  width: min(100%, 620px); min-width: 0; box-sizing: border-box;
+  max-height: calc(100% - 8px);
+  overflow-x: hidden; overflow-y: auto;
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px; display: grid; gap: 12px;
+}
+.sheet-head { display: flex; align-items: center; gap: 10px; }
+.sheet-head .kind {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
+}
+.sheet-head .kind i { width: 10px; height: 10px; border-radius: 50%; }
+.sheet-head h3, .sheet-head input {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: .02em;
+  color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px 6px;
+}
+.sheet-head input:hover, .sheet-head input:focus { border-color: var(--line); background: var(--bg); outline: none; }
+.sheet-head .x {
+  flex: none; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel-2); font-size: 20px; line-height: 1; display: grid; place-items: center; padding: 0;
+}
+.shot {
+  position: relative; border-radius: 8px; overflow: hidden;
+  background: #070b0d; border: 1px solid var(--line);
+  min-height: 200px; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center;
+}
+.shot img { display: block; width: 100%; max-width: 100%; height: auto; max-height: 62vh; object-fit: contain; cursor: zoom-in; }
+.shot .empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 14px; display: grid; gap: 10px; justify-items: center; }
+.shot-nav { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.shot-nav button { width: 36px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); font-size: 18px; padding: 0; }
+.sheet .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.sheet .acts .btn { padding: 8px 12px; font-size: 13.5px; }
+.btn.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+.sheet .meta { margin: 0; font-size: 13px; color: var(--muted); }
+.lightbox { position: fixed; inset: 0; z-index: 40; background: rgba(3,5,6,.96); display: grid; place-items: center; padding: 10px; cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .steps { margin: 0; padding: 2px 0 4px 22px; display: grid; gap: 6px; font-size: 14px; }
 .steps li::marker { font-family: var(--display); color: var(--t-side); font-weight: 600; }
 .plays .note { margin: 0; font-size: 13px; color: var(--muted); }
@@ -327,13 +400,18 @@ button:focus-visible, a:focus-visible, label:focus-within {
         </div>
       </div>
 
+      <div class="place-bar" id="placeBar" hidden>
+        <p id="placeText"></p>
+        <button class="btn ghost" type="button" id="placeSkip" hidden>Пропустить</button>
+        <button class="btn ghost" type="button" id="placeCancel">Отмена</button>
+      </div>
       <p class="readonly-note" id="roNote" hidden>У тебя доступ только на просмотр. Рисовать могут владелец доски и те, кого он пригласил с правом изменять.</p>
 
       <div class="tools" id="tools">
         <div class="row" id="toolRow" role="group" aria-label="Инструмент"></div>
         <div class="row" id="colorRow" role="group" aria-label="Цвет"></div>
       </div>
-      <p class="hint">Пунктир и номера: готовая тактика. Сплошные линии: то, что нарисовала команда. Цвета 1–5 совпадают с номерами игроков. Двумя пальцами карту можно приблизить и сдвинуть.</p>
+      <p class="hint" id="hint">Пунктир и номера: готовая тактика. Сплошные линии: то, что нарисовала команда. Цвета 1–5 совпадают с номерами игроков. Двумя пальцами карту можно приблизить и сдвинуть.</p>
     </section>
 
     <aside class="plays" id="plays" aria-label="Готовые тактики"></aside>
@@ -350,6 +428,25 @@ button:focus-visible, a:focus-visible, label:focus-within {
     </div>
   </div>
 </div>
+<div class="veil" id="nadeVeil" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="nadeTitle">
+    <div class="sheet-head">
+      <span class="kind" id="nadeKind"></span>
+      <h3 id="nadeTitle"></h3>
+      <input id="nadeName" type="text" maxlength="60" aria-label="Название раскидки" hidden>
+      <button class="x" type="button" id="nadeClose" aria-label="Закрыть">×</button>
+    </div>
+    <div class="shot" id="nadeShot"></div>
+    <div class="shot-nav" id="nadeNav" hidden>
+      <button type="button" id="shotPrev" aria-label="Предыдущая картинка">‹</button>
+      <span id="shotPos"></span>
+      <button type="button" id="shotNext" aria-label="Следующая картинка">›</button>
+    </div>
+    <p class="meta" id="nadeMeta"></p>
+    <div class="acts" id="nadeActs"></div>
+  </div>
+</div>
+<div class="lightbox" id="lightbox" hidden><img id="lightImg" alt=""></div>
 <div class="toast" id="toast" role="alert" hidden></div>
 
 <script src="mqtt.min.js"></script>
@@ -610,6 +707,8 @@ let stateExists = false;
 let db = null, room = null, user = null, assets = null, uid = null;
 let readOnly = false, emitOk = true;
 let tool = 'pen', color = 0;
+let mode = 'plays', nadeType = 'smoke';   // this viewer's view; never shared
+let assetsP = Promise.resolve(null);
 let syncState = 'wait', peerCount = 0;
 
 const remote = new Map();     // committed strokes of the open map, from the store
@@ -771,7 +870,7 @@ function applyRemoteState(d) {
 }
 
 function onState(before) {
-  if (before !== S.map) { cur = null; subscribeStrokes(); view.z = 1; view.x = 0; view.y = 0; setStageShape(); resize(); }
+  if (before !== S.map) { cur = null; selLine = null; placing = null; renderPlace(); closeSheet(); subscribeStrokes(); view.z = 1; view.x = 0; view.y = 0; setStageShape(); resize(); }
   loadBg();
   renderMaps();
   renderPlays();
@@ -827,6 +926,7 @@ function startDb(d) {
     if (!snap.metadata.fromCache) markLive();
   }, syncError);
   subscribeStrokes();
+  subscribeLineups();
   // anything sketched before the store answered goes to the team now
   for (const m of MAP_IDS) {
     const mine = locals[m];
@@ -911,31 +1011,48 @@ function setReadOnly(v) {
   $('tools').hidden = v;
   stage.classList.toggle('readonly', v);
   renderMaps(); renderPlays(); invalidate();
+  if (!$('nadeVeil').hidden) renderSheet();
+}
+
+/* ================= images ================= */
+
+const ASSET_ID = /^[A-Za-z0-9_.~:@+-]{1,200}$/;
+// Inside Claude an uploaded image is served at /_blob/<id>; the standalone build's store hands back its own URL.
+function imageUrl(id) {
+  if (!ASSET_ID.test(String(id))) return Promise.reject(new Error('bad image id'));
+  return assetsP.then((a) => (a && typeof a.url === 'function' ? a.url(id) : '/_blob/' + id));
+}
+async function compressImage(file, maxSide, q) {
+  let bmp;
+  try { bmp = await createImageBitmap(file); } catch (e) { return null; }
+  const k = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise((r) => c.toBlob(r, 'image/jpeg', q));
 }
 
 /* ================= custom background ================= */
 
 function loadBg() {
-  const key = S.map !== 'custom' ? null : (S.bg ? '/_blob/' + S.bg : localBgUrl);
+  const key = S.map !== 'custom' ? null : (S.bg ? 'asset:' + S.bg : localBgUrl);
   if (key === bgKey) return;
   bgKey = key; bgImg = null;
   if (!key) return;
-  const img = new Image();
-  img.onload = () => { if (bgKey === key) { bgImg = img; renderPlays(); invalidate(); } };
-  img.onerror = () => { if (bgKey === key) toast('Не получилось показать фон карты.'); };
-  img.src = key;
+  const src = S.bg && key === 'asset:' + S.bg ? imageUrl(S.bg) : Promise.resolve(key);
+  src.then((url) => {
+    if (bgKey !== key) return;
+    const img = new Image();
+    img.onload = () => { if (bgKey === key) { bgImg = img; renderPlays(); invalidate(); } };
+    img.onerror = () => { if (bgKey === key) toast('Не получилось показать фон карты.'); };
+    img.src = url;
+  }, () => { if (bgKey === key) toast('Не получилось показать фон карты.'); });
 }
 
 async function pickBg(file) {
   if (!file) return;
-  let bmp;
-  try { bmp = await createImageBitmap(file); } catch (e) { toast('Это не картинка. Нужен PNG или JPG.'); return; }
-  const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
-  const c = document.createElement('canvas');
-  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-  const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
-  if (!blob) { toast('Не получилось подготовить картинку.'); return; }
+  const blob = await compressImage(file, 1400, 0.86);
+  if (!blob) { toast('Это не картинка. Нужен PNG или JPG.'); return; }
   if (assets && db) {
     toast('Загружаю фон…');
     try {
@@ -1075,6 +1192,12 @@ function stamp(k, x, y, c, s) {
     ctx.closePath();
     ctx.fillStyle = '#fff3b0'; ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 2; ctx.stroke();
+  } else if (k === 'he') {
+    ctx.beginPath(); ctx.arc(x, y, 26, 0, 7);
+    ctx.fillStyle = 'rgba(120,196,92,.42)'; ctx.fill();
+    ctx.strokeStyle = '#94e27a'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fillStyle = '#2f4a26'; ctx.fill();
+    ctx.strokeStyle = '#94e27a'; ctx.lineWidth = 2; ctx.stroke();
   } else if (k === 'player') {
     const r = Math.max(19, 9 / s);
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
@@ -1139,6 +1262,11 @@ function draw() {
   ctx.setTransform(dpr * k, 0, 0, dpr * k, -view.x * dpr * k, -view.y * dpr * k);
   const m = MAPS[S.map];
   drawMap(m, k);
+  if (mode === 'nades') {
+    drawLineups(k);
+    $('customEmpty').hidden = !(S.map === 'custom' && !bgKey);
+    return;
+  }
   const t = currentTac();
   if (t) drawTactic(t, k);
   for (const st of strokes()) drawStroke(st, k);
@@ -1184,7 +1312,7 @@ function eraseAt(x, y) {
 
 let erasing = false, activePointer = null;
 const fingers = new Map();
-let pinch = null, held = false;   // held: a pinch happened, wait until every finger lifts before drawing again
+let pinch = null, held = false, tapStart = null;   // held: a pinch happened, wait until every finger lifts before drawing again
 
 function startPinch() {
   if (cur) { cur = null; emitCancel(); }
@@ -1200,7 +1328,11 @@ cv.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
   fingers.set(e.pointerId, [e.clientX, e.clientY]);
-  if (fingers.size === 2 && e.pointerType !== 'mouse') { startPinch(); return; }
+  if (fingers.size === 2 && e.pointerType !== 'mouse') { tapStart = null; startPinch(); return; }
+  if (mode === 'nades') {
+    tapStart = fingers.size === 1 && !held ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null;
+    return;
+  }
   if (fingers.size > 1 || held || readOnly || activePointer !== null) return;
   activePointer = e.pointerId;
   const [x, y] = pos(e);
@@ -1232,6 +1364,10 @@ cv.addEventListener('pointermove', (e) => {
   requestDraw();
 });
 function endPointer(e, cancelled) {
+  if (tapStart && tapStart.id === e.pointerId) {
+    const t = tapStart; tapStart = null;
+    if (!cancelled && !held && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 12) onMapTap(pos(e));
+  }
   fingers.delete(e.pointerId);
   if (fingers.size < 2) pinch = null;
   if (!fingers.size) held = false;
@@ -1268,6 +1404,337 @@ function zoomStep(f) {
 }
 $('zoomReset').addEventListener('click', resetView);
 
+/* ================= lineups (раскидки) ================= */
+
+const NADES = [
+  ['smoke', 'Смоки', 'Смок', '#d6dce0'],
+  ['molly', 'Молотовы', 'Молотов', '#f2884a'],
+  ['flash', 'Флешки', 'Флешка', '#fff0a0'],
+  ['he', 'HE', 'HE', '#94e27a']
+];
+const NADE = Object.fromEntries(NADES.map((n) => [n[0], { many: n[1], one: n[2], col: n[3] }]));
+// Starting spots: the grenades already used in the ready-made plays, named by where they land.
+const SEED_NAMES = {
+  'mir-a': ['CT', 'Jungle', 'Stairs', 'Над A'], 'mir-b': ['Window', 'Connector', 'Market', 'Над B'],
+  'd2-b': ['B Doors', 'Window у B', 'Задний угол B', 'Над B'], 'd2-a': ['CT у A', 'Xbox', 'Над A с Long', 'Над A с Short'],
+  'inf-b': ['Car', 'CT у B', 'Coffins', 'Над B'], 'inf-a': ['Library', 'Arch', 'Pit', 'Над A'],
+  'anc-a': ['Проход CT к A', 'Второй проход CT к A', 'Mid', 'Над A'], 'anc-b': ['Проход CT к B', 'Второй проход CT к B', 'Над B'],
+  'anu-a': ['Проход CT к A', 'Второй проход к A', 'Над A'], 'anu-b': ['Проход CT к B', 'Второй проход к B', 'Над B'],
+  'cache-a': ['Проход CT к A', 'Верх A', 'Над A'], 'cache-b': ['Проход CT к B', 'Проход к B из Mid', 'Над B'],
+  'nuke-a': ['Main', 'Внутри A', 'Над A'], 'nuke-b': ['B со стороны CT', 'Над B']
+};
+const SEEDS = [];
+for (const m of MAP_IDS) {
+  for (const t of MAPS[m].tactics) {
+    (t.util || []).forEach((u, i) => {
+      if (!NADE[u[0]]) return;
+      const near = SEEDS.some((q) => q.m === m && q.k === u[0] && Math.hypot(q.t[0] - u[1], q.t[1] - u[2]) < 30);
+      if (near) return;
+      const names = SEED_NAMES[t.id] || [];
+      SEEDS.push({ id: 'seed-' + t.id + '-' + i, m, k: u[0], t: [u[1], u[2]], f: null, n: names[i] || NADE[u[0]].one, img: [], seed: true });
+    });
+  }
+}
+
+const lineDocs = new Map();   // id -> record from the shared store (or this device, without a store)
+let selLine = null, placing = null, shotIdx = 0;
+
+function sanitizeLine(id, d) {
+  if (!d || typeof d !== 'object' || !/^[A-Za-z0-9-]{6,60}$/.test(String(id))) return null;
+  if (d.del === 1 || d.del === true) return { id: String(id), del: true, m: MAPS[d.m] ? d.m : null };
+  if (!MAPS[d.m] || !NADE[d.k]) return null;
+  const pt = (v) => (Array.isArray(v) && v.length === 2 && v.every(Number.isFinite)
+    ? [Math.max(0, Math.min(1000, +v[0])), Math.max(0, Math.min(1000, +v[1]))] : null);
+  const t = pt(d.t);
+  if (!t) return null;
+  const img = Array.isArray(d.img) ? d.img.filter((x) => typeof x === 'string' && ASSET_ID.test(x)).slice(0, 8) : [];
+  const n = typeof d.n === 'string' ? d.n.slice(0, 60) : '';
+  return { id: String(id), m: d.m, k: d.k, t, f: pt(d.f), n: n || NADE[d.k].one, img, seed: String(id).startsWith('seed-') };
+}
+
+function lineupsOf(m, k) {
+  const out = new Map();
+  for (const q of SEEDS) if (q.m === m) out.set(q.id, q);
+  for (const d of lineDocs.values()) {
+    if (d.del) { out.delete(d.id); continue; }
+    if (d.m === m) out.set(d.id, d);
+  }
+  const list = [...out.values()];
+  return k ? list.filter((q) => q.k === k) : list;
+}
+function lineById(id) { return lineupsOf(S.map).find((q) => q.id === id) || null; }
+
+let unsubLines = null;
+function subscribeLineups() {
+  if (!db || unsubLines) return;
+  unsubLines = db.collection('lineups').onSnapshot((snap) => {
+    lineDocs.clear();
+    for (const doc of snap.docs) {
+      const r = sanitizeLine(doc.id, doc.data());
+      if (r) lineDocs.set(r.id, r);
+    }
+    refreshLines();
+  }, () => {});
+}
+function refreshLines() {
+  if (selLine && !lineById(selLine)) { selLine = null; closeSheet(); }
+  if (mode === 'nades') renderPlays();
+  if (!$('nadeVeil').hidden) renderSheet();
+  invalidate();
+}
+
+function saveLine(r) {
+  const body = { m: r.m, k: r.k, t: r.t, f: r.f || null, n: r.n, img: r.img || [], ts: Date.now() };
+  if (uid) body.by = uid;
+  const rec = sanitizeLine(r.id, body);
+  if (!rec) return Promise.resolve();
+  lineDocs.set(r.id, rec);    // show it right away; the store confirms in a moment
+  refreshLines();
+  if (!db) return Promise.resolve();
+  return db.collection('lineups').doc(r.id).set(body).catch(writeFailed);
+}
+function removeLine(r) {
+  for (const id of r.img || []) if (assets && assets.delete) assets.delete(id).catch(() => {});
+  if (r.seed) {   // a starting spot stays hidden for everyone
+    if (!db) { lineDocs.set(r.id, { id: r.id, del: true, m: r.m }); refreshLines(); return; }
+    lineDocs.set(r.id, { id: r.id, del: true, m: r.m }); refreshLines();
+    db.collection('lineups').doc(r.id).set({ del: 1, m: r.m, ts: Date.now() }).catch(writeFailed);
+    return;
+  }
+  lineDocs.delete(r.id); refreshLines();
+  if (db) db.collection('lineups').doc(r.id).delete().catch(writeFailed);
+}
+
+function drawLineups(s) {
+  const list = lineupsOf(S.map, nadeType);
+  const sel = selLine && list.find((q) => q.id === selLine);
+  const draft = placing && placing.rec.m === S.map ? placing.rec : null;
+  ctx.globalAlpha = sel || draft ? 0.55 : 1;
+  for (const q of list) if (q !== sel && !(draft && q.id === draft.id)) stamp(q.k, q.t[0], q.t[1], 5, s);
+  ctx.globalAlpha = 1;
+  const focus = draft || sel;
+  if (!focus) return;
+  if (focus.f && focus.t) {
+    const [x1, y1] = focus.f, [x2, y2] = focus.t;
+    ctx.save();
+    ctx.setLineDash([10, 9]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = '#f4f1e8'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.restore();
+    const r = focus.k === 'smoke' ? 38 : focus.k === 'molly' ? 30 : 24;
+    const d = Math.hypot(x2 - x1, y2 - y1) || 1;
+    const ex = x2 - (x2 - x1) / d * (r + 4), ey = y2 - (y2 - y1) / d * (r + 4);
+    arrowHead(x1, y1, ex, ey, 22); ctx.fillStyle = '#f4f1e8'; ctx.fill();
+  }
+  if (focus.t) {
+    stamp(focus.k, focus.t[0], focus.t[1], 5, s);
+    const r = (focus.k === 'smoke' ? 38 : focus.k === 'molly' ? 30 : 26) + 9;
+    ctx.save(); ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.arc(focus.t[0], focus.t[1], r, 0, 7);
+    ctx.strokeStyle = '#e3a53a'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+  }
+  if (focus.f) {
+    const [x, y] = focus.f;
+    ctx.beginPath(); ctx.arc(x, y, 14, 0, 7);
+    ctx.fillStyle = '#e3a53a'; ctx.fill();
+    ctx.strokeStyle = '#0c1215'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 4.5, 0, 7); ctx.fillStyle = '#0c1215'; ctx.fill();
+  }
+}
+
+function onMapTap(p) {
+  if (placing) { placeAt(p); return; }
+  const k = size / 1000 * view.z, pad = 14 / k;
+  let best = null, bd = Infinity;
+  for (const q of lineupsOf(S.map, nadeType)) {
+    const r = q.k === 'smoke' ? 38 : q.k === 'molly' ? 30 : 26;
+    const d = Math.hypot(p[0] - q.t[0], p[1] - q.t[1]);
+    if (d < r + pad && d < bd) { best = q; bd = d; }
+  }
+  if (best) openLine(best.id);
+  else if (selLine) { selLine = null; renderPlays(); invalidate(); }
+}
+
+function setMode(m) {
+  if (mode === m) return;
+  mode = m; selLine = null; stopPlacing(true);
+  if (cur) { cur = null; emitCancel(); }
+  $('tools').classList.toggle('nades', m === 'nades');
+  $('hint').textContent = m === 'nades'
+    ? 'Выбери тип гранаты и нажми на точку на карте: откроется картинка, откуда и как кидать. Двумя пальцами карту можно приблизить.'
+    : 'Пунктир и номера: готовая тактика. Сплошные линии: то, что нарисовала команда. Цвета 1–5 совпадают с номерами игроков. Двумя пальцами карту можно приблизить и сдвинуть.';
+  renderPlays(); invalidate();
+}
+
+function startPlacing(existing) {
+  closeSheet();
+  placing = existing
+    ? { step: 't', isNew: false, rec: { ...existing, t: null, f: null, img: [...(existing.img || [])] }, prev: existing }
+    : { step: 't', isNew: true, rec: { id: newId(), m: S.map, k: nadeType, t: null, f: null, n: '', img: [] } };
+  renderPlace(); invalidate();
+}
+function renderPlace() {
+  const bar = $('placeBar');
+  bar.hidden = !placing;
+  if (!placing) return;
+  const one = NADE[placing.rec.k].one.toLowerCase();
+  const b = document.createElement('b');
+  b.textContent = placing.step === 't' ? '1/2' : '2/2';
+  const p = $('placeText');
+  p.textContent = '';
+  p.appendChild(b);
+  p.appendChild(document.createTextNode(placing.step === 't'
+    ? 'Нажми на карте, куда падает ' + one + '.'
+    : 'Нажми, откуда кидать: где стоит игрок.'));
+  $('placeSkip').hidden = placing.step !== 'f';
+}
+function placeAt(p) {
+  if (!placing) return;
+  if (placing.step === 't') { placing.rec.t = p; placing.step = 'f'; renderPlace(); invalidate(); return; }
+  placing.rec.f = p; finishPlacing();
+}
+function finishPlacing() {
+  const pl = placing;
+  placing = null; renderPlace();
+  const r = pl.rec;
+  if (pl.isNew) r.n = NADE[r.k].one + ' ' + (lineupsOf(r.m, r.k).length + 1);
+  saveLine(r);
+  selLine = r.id;
+  openLine(r.id);
+}
+function stopPlacing(quiet) {
+  if (!placing) return;
+  placing = null; renderPlace();
+  if (!quiet) invalidate();
+}
+$('placeSkip').addEventListener('click', () => { if (placing && placing.step === 'f') { placing.rec.f = null; finishPlacing(); } });
+$('placeCancel').addEventListener('click', () => stopPlacing(false));
+
+/* ---------- the lineup card ---------- */
+
+function openLine(id) {
+  selLine = id; shotIdx = 0;
+  renderPlays(); renderSheet(); invalidate();
+  $('nadeVeil').hidden = false;
+  $('nadeClose').focus({ preventScroll: true });
+}
+function closeSheet() {
+  $('nadeVeil').hidden = true;
+  $('lightbox').hidden = true;
+}
+let shotSeq = 0;
+function renderSheet() {
+  const r = selLine && lineById(selLine);
+  if (!r) { closeSheet(); return; }
+  const canEdit = !readOnly;
+  const canUpload = canEdit && !!assets;
+  const kind = $('nadeKind');
+  kind.textContent = '';
+  const dot = document.createElement('i'); dot.style.background = NADE[r.k].col;
+  kind.appendChild(dot); kind.appendChild(document.createTextNode(NADE[r.k].one));
+  $('nadeTitle').textContent = r.n;
+  $('nadeTitle').hidden = canEdit;
+  const name = $('nadeName');
+  name.hidden = !canEdit;
+  if (document.activeElement !== name) name.value = r.n;
+
+  const imgs = r.img || [];
+  if (shotIdx >= imgs.length) shotIdx = Math.max(0, imgs.length - 1);
+  const shot = $('nadeShot');
+  shot.textContent = '';
+  const seq = ++shotSeq;
+  if (imgs.length) {
+    const wait = el('div', 'empty', 'Загружаю картинку…');
+    shot.appendChild(wait);
+    imageUrl(imgs[shotIdx]).then((url) => {
+      if (seq !== shotSeq) return;
+      const img = new Image();
+      img.alt = r.n;
+      img.onload = () => { if (seq === shotSeq) { shot.textContent = ''; shot.appendChild(img); } };
+      img.onerror = () => { if (seq === shotSeq) wait.textContent = 'Картинка не открылась. Попробуй ещё раз позже.'; };
+      img.addEventListener('click', () => { $('lightImg').src = img.src; $('lightImg').alt = r.n; $('lightbox').hidden = false; });
+      img.src = url;
+    }, () => { if (seq === shotSeq) wait.textContent = 'Картинка не открылась. Попробуй ещё раз позже.'; });
+  } else {
+    const empty = el('div', 'empty');
+    empty.appendChild(el('span', '', 'Картинки пока нет.'));
+    empty.appendChild(el('span', '', canUpload
+      ? 'Загрузи скриншот: откуда встать и куда целиться.'
+      : 'Картинку добавит владелец доски.'));
+    shot.appendChild(empty);
+  }
+  $('nadeNav').hidden = imgs.length < 2;
+  $('shotPos').textContent = imgs.length ? (shotIdx + 1) + ' из ' + imgs.length : '';
+  $('nadeMeta').textContent = r.f
+    ? 'На карте: оранжевая точка, откуда кидать, пунктир ведёт туда, куда падает граната.'
+    : 'Точка, откуда кидать, не отмечена. Её можно добавить кнопкой «Изменить точки».';
+
+  const acts = $('nadeActs');
+  acts.textContent = '';
+  if (canUpload && imgs.length < 8) {
+    const lab = el('label', 'btn file');
+    lab.appendChild(el('span', '', imgs.length ? 'Добавить картинку' : 'Загрузить картинку'));
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true; inp.id = 'shotFile';
+    inp.addEventListener('change', () => { const files = [...inp.files]; inp.value = ''; addShots(r.id, files); });
+    lab.appendChild(inp);
+    acts.appendChild(lab);
+  }
+  if (!canEdit) return;
+  acts.appendChild(confirmBtn('Изменить точки', 'ghost', null, () => startPlacing(r)));
+  if (imgs.length) {
+    acts.appendChild(confirmBtn('Удалить картинку', 'ghost', 'Точно удалить картинку?', () => {
+      const cur = lineById(r.id); if (!cur) return;
+      const gone = cur.img[shotIdx];
+      const img = cur.img.filter((_, i) => i !== shotIdx);
+      if (gone && assets && assets.delete) assets.delete(gone).catch(() => {});
+      saveLine({ ...cur, img });
+    }));
+  }
+  acts.appendChild(confirmBtn('Удалить раскидку', 'ghost', 'Точно удалить у всех?', () => { closeSheet(); selLine = null; removeLine(r); }));
+}
+function confirmBtn(label, cls, ask, fn) {
+  const b = el('button', 'btn ' + cls, label);
+  b.type = 'button';
+  let armed = false, timer = null;
+  b.addEventListener('click', () => {
+    if (!ask || armed) { clearTimeout(timer); fn(); return; }
+    armed = true; b.textContent = ask; b.classList.add('armed');
+    timer = setTimeout(() => { armed = false; b.textContent = label; b.classList.remove('armed'); }, 4000);
+  });
+  return b;
+}
+async function addShots(id, files) {
+  if (!assets) { toast('Загружать картинки может владелец доски или редактор.'); return; }
+  const added = [];
+  for (const f of files.slice(0, 6)) {
+    const blob = await compressImage(f, 1600, 0.8);
+    if (!blob) { toast('Это не картинка. Нужен PNG или JPG.'); continue; }
+    toast('Загружаю картинку…');
+    try { const up = await assets.upload(blob); added.push(up.id); }
+    catch (e) { toast('Картинка не загрузилась. Попробуй картинку поменьше.'); }
+  }
+  const r = lineById(id);
+  if (!added.length || !r) return;
+  const img = [...(r.img || []), ...added].slice(0, 8);
+  shotIdx = Math.min((r.img || []).length, img.length - 1);
+  await saveLine({ ...r, img });
+  toast(added.length > 1 ? 'Картинки добавлены, их видит вся команда.' : 'Картинка добавлена, её видит вся команда.');
+}
+
+$('nadeClose').addEventListener('click', () => { closeSheet(); });
+$('nadeVeil').addEventListener('click', (e) => { if (e.target === $('nadeVeil')) closeSheet(); });
+$('lightbox').addEventListener('click', () => { $('lightbox').hidden = true; });
+$('shotPrev').addEventListener('click', () => { const r = lineById(selLine); if (!r) return; shotIdx = (shotIdx - 1 + r.img.length) % r.img.length; renderSheet(); });
+$('shotNext').addEventListener('click', () => { const r = lineById(selLine); if (!r) return; shotIdx = (shotIdx + 1) % r.img.length; renderSheet(); });
+$('nadeName').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+$('nadeName').addEventListener('change', (e) => {
+  const r = lineById(selLine);
+  const n = e.target.value.trim().slice(0, 60);
+  if (r && n && n !== r.n) saveLine({ ...r, n });
+});
+
 /* ================= UI ================= */
 
 function renderMaps() {
@@ -1294,13 +1761,69 @@ function el(tag, cls, text) {
   return n;
 }
 
+function renderSeg(box) {
+  const seg = el('div', 'seg');
+  seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Что показать');
+  for (const [id, label] of [['plays', 'Тактики'], ['nades', 'Раскидки']]) {
+    const b = el('button', '', label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(mode === id));
+    b.addEventListener('click', () => setMode(id));
+    seg.appendChild(b);
+  }
+  box.appendChild(seg);
+}
+
+function renderNades(box) {
+  const m = MAPS[S.map];
+  box.appendChild(el('h2', '', 'Раскидки · ' + m.name));
+  const chips = el('div', 'chips');
+  chips.setAttribute('role', 'group'); chips.setAttribute('aria-label', 'Граната');
+  for (const [k, many] of NADES) {
+    const b = el('button', 'chip');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(nadeType === k));
+    const i = document.createElement('i'); i.style.background = NADE[k].col;
+    b.appendChild(i);
+    b.appendChild(document.createTextNode(many));
+    b.appendChild(el('small', '', String(lineupsOf(S.map, k).length)));
+    b.addEventListener('click', () => { nadeType = k; selLine = null; stopPlacing(true); renderPlays(); invalidate(); });
+    chips.appendChild(b);
+  }
+  box.appendChild(chips);
+  const list = lineupsOf(S.map, nadeType).sort((a, b) => a.n.localeCompare(b.n, 'ru'));
+  for (const q of list) {
+    const b = el('button', 'play');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(q.id === selLine));
+    const d = el('span', 'dot'); d.style.background = NADE[q.k].col;
+    b.appendChild(d);
+    b.appendChild(el('span', 'name', q.n));
+    b.appendChild(el('span', 'state', q.img.length ? 'фото: ' + q.img.length : 'без фото'));
+    b.addEventListener('click', () => openLine(q.id));
+    box.appendChild(b);
+  }
+  if (!list.length) box.appendChild(el('p', 'note', NADE[nadeType].many + ' на этой карте пока не отмечены.'));
+  if (!readOnly) {
+    const add = el('button', 'btn ghost', '+ Добавить: ' + NADE[nadeType].one.toLowerCase());
+    add.type = 'button';
+    add.addEventListener('click', () => startPlacing(null));
+    box.appendChild(add);
+  }
+  box.appendChild(el('p', 'note', list.length
+    ? 'Нажми на точку на карте или в списке, чтобы открыть картинку.'
+    : 'Отметь на карте, куда падает граната и откуда её кидать, потом загрузи картинку.'));
+}
+
 function renderPlays() {
   const box = $('plays');
   box.textContent = '';
   const m = MAPS[S.map];
+  renderSeg(box);
+  if (mode === 'nades') { renderNades(box); return; }
   if (S.map === 'custom') {
     box.appendChild(el('h2', '', 'Своя карта'));
-    const canUpload = !readOnly;
+    const canUpload = !readOnly && (assets || !db);
     box.appendChild(el('p', 'note', bgKey
       ? 'Готовых тактик для своей карты нет. Рисуйте с нуля поверх загруженного фона.'
       : 'Сюда можно загрузить скриншот радара любой карты, которой нет в списке.'));
@@ -1314,7 +1837,7 @@ function renderPlays() {
       box.appendChild(lab);
     }
     if (!canUpload) box.appendChild(el('p', 'note', 'Фон загружает владелец доски или редактор.'));
-    if (!assets) box.appendChild(el('p', 'note', 'Фон виден только на этом устройстве. Остальные видят рисунки на пустой сетке.'));
+    if (!db && syncState === 'local') box.appendChild(el('p', 'note', 'В пробном режиме фон остаётся только на этом устройстве.'));
     $('uploadWrap').hidden = !canUpload;
     $('customEmptyText').textContent = canUpload
       ? 'Загрузи скриншот радара любой карты и рисуйте поверх него.'
@@ -1403,7 +1926,13 @@ function toast(text) {
 $('dlgNo').addEventListener('click', () => { $('veil').hidden = true; });
 $('dlgYes').addEventListener('click', () => { $('veil').hidden = true; clearBoard(); });
 $('veil').addEventListener('click', (e) => { if (e.target === $('veil')) $('veil').hidden = true; });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('veil').hidden = true; });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!$('lightbox').hidden) { $('lightbox').hidden = true; return; }
+  if (!$('nadeVeil').hidden) { closeSheet(); return; }
+  if (placing) { stopPlacing(false); return; }
+  $('veil').hidden = true;
+});
 $('bgFile').addEventListener('change', (e) => { pickBg(e.target.files[0]); e.target.value = ''; });
 
 /* ================= boot ================= */
@@ -1411,6 +1940,7 @@ $('bgFile').addEventListener('change', (e) => { pickBg(e.target.files[0]); e.tar
 function start(saved) {
   if (saved && TOOLS.some((t) => t[0] === saved.tool)) tool = saved.tool;
   if (saved && Number.isInteger(saved.color) && saved.color >= 0 && saved.color < COLORS.length) color = saved.color;
+  if (saved && NADE[saved.nadeType]) nadeType = saved.nadeType;
   renderTools(); renderMaps(); renderPlays();
   setStageShape();
   new ResizeObserver(resize).observe(stage);
@@ -1430,11 +1960,11 @@ function start(saved) {
   });
   use('db').then((d) => { if (d) startDb(d); else setSync('local'); });
   use('room').then((r) => { if (r) startRoom(r); });
-  use('assets').then((a) => { assets = a; renderPlays(); });
+  assetsP = use('assets').then((a) => { assets = a; renderPlays(); if (!$('nadeVeil').hidden) renderSheet(); return a; });
 }
 
 const hot = window.claude && window.claude.hot;
-if (hot && hot.snapshot) hot.snapshot(() => ({ tool, color }));
+if (hot && hot.snapshot) hot.snapshot(() => ({ tool, color, nadeType }));
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
 })();
 </script>

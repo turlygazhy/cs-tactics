@@ -159,6 +159,92 @@
     canSendToClaudeSession: async () => 'off'
   });
 
+  /* ---------- images: split into retained parts, fetched only when someone opens them ---------- */
+
+  const PART = 40000;                       // characters of base64 per message, well under public broker limits
+  const IMG_ID = /^[a-z0-9]{8,32}$/;
+  const imgUrls = new Map();                // id -> Promise<url>
+  const imgMeta = new Map();                // id -> parts count
+  const loaders = new Map();                // id -> { meta, parts: Map, done(url), fail(err) }
+
+  function b64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1] || '');
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(blob);
+    });
+  }
+  function tryFinish(id) {
+    const L = loaders.get(id);
+    if (!L || !L.meta || L.parts.size < L.meta.n) return;
+    loaders.delete(id);
+    if (client) client.unsubscribe(ROOT + 'i/' + id + '/#');
+    try {
+      let text = '';
+      for (let i = 0; i < L.meta.n; i++) text += L.parts.get(i) || '';
+      const bin = atob(text), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      L.done(URL.createObjectURL(new Blob([bytes], { type: /^image\/(jpeg|png|webp)$/.test(L.meta.type) ? L.meta.type : 'image/jpeg' })));
+    } catch (e) { L.fail({ code: 'invalid_argument', message: 'broken image' }); }
+  }
+  function onImage(key, text) {
+    const slash = key.indexOf('/');
+    const id = key.slice(0, slash), part = key.slice(slash + 1);
+    const L = loaders.get(id);
+    if (!L || !text) return;
+    if (part === 'meta') {
+      try {
+        const m = JSON.parse(text);
+        if (Number.isInteger(m.n) && m.n > 0 && m.n <= 200) { L.meta = { n: m.n, type: String(m.type || '') }; imgMeta.set(id, m.n); }
+      } catch (e) { return; }
+    } else if (/^\d{1,3}$/.test(part)) {
+      if (/^[A-Za-z0-9+/=]*$/.test(text)) L.parts.set(+part, text);
+    }
+    tryFinish(id);
+  }
+  function loadImage(id) {
+    if (!IMG_ID.test(id)) return Promise.reject({ code: 'invalid_argument', message: 'bad id' });
+    if (imgUrls.has(id)) return imgUrls.get(id);
+    const p = new Promise((resolve, reject) => {
+      const L = { meta: null, parts: new Map(), done: resolve, fail: reject };
+      loaders.set(id, L);
+      setTimeout(() => {
+        if (loaders.get(id) !== L) return;
+        loaders.delete(id);
+        if (client) client.unsubscribe(ROOT + 'i/' + id + '/#');
+        reject({ code: 'unavailable', message: 'image not found' });
+      }, 20000);
+      if (client) client.subscribe(ROOT + 'i/' + id + '/#', { qos: 1 });
+    });
+    imgUrls.set(id, p);
+    p.catch(() => imgUrls.delete(id));      // a later open tries again
+    return p;
+  }
+  const assets = Object.freeze({
+    upload: async (blob) => {
+      const id = rnd(16);
+      const text = await b64(blob);
+      const n = Math.max(1, Math.ceil(text.length / PART));
+      for (let i = 0; i < n; i++) await publish(ROOT + 'i/' + id + '/' + i, text.slice(i * PART, (i + 1) * PART), { qos: 1, retain: true });
+      await publish(ROOT + 'i/' + id + '/meta', JSON.stringify({ n, type: blob.type || 'image/jpeg' }), { qos: 1, retain: true });
+      imgMeta.set(id, n);
+      const url = URL.createObjectURL(blob);
+      imgUrls.set(id, Promise.resolve(url));
+      return { id, url, sizeBytes: blob.size, contentType: blob.type || 'image/jpeg' };
+    },
+    url: loadImage,
+    delete: async (id) => {
+      if (!IMG_ID.test(id)) return;
+      if (!imgMeta.has(id)) { try { await loadImage(id); } catch (e) { return; } }
+      const n = imgMeta.get(id) || 0;
+      await publish(ROOT + 'i/' + id + '/meta', '', { qos: 1, retain: true });
+      for (let i = 0; i < n; i++) await publish(ROOT + 'i/' + id + '/' + i, '', { qos: 1, retain: true });
+      imgUrls.delete(id); imgMeta.delete(id);
+    },
+    list: async () => ({ assets: [], usage: {} })
+  });
+
   /* ---------- wire ---------- */
 
   function onMessage(topic, payload) {
@@ -166,6 +252,7 @@
     const rest = topic.slice(ROOT.length);
     const kind = rest.slice(0, 2), key = rest.slice(2);
     const text = payload && payload.length ? new TextDecoder().decode(payload) : '';
+    if (kind === 'i/') { onImage(key, text); return; }
     let obj = null;
     if (text) { try { obj = JSON.parse(text); } catch (e) { return; } }
     if (kind === 'd/') {
@@ -241,6 +328,6 @@
 
   window.__cst = { room: roomName, docs };
   window.claude = Object.freeze({
-    use: (name) => ready.then((ok) => (ok && name === 'db' ? db : ok && name === 'room' ? room : null))
+    use: (name) => ready.then((ok) => (!ok ? null : name === 'db' ? db : name === 'room' ? room : name === 'assets' ? assets : null))
   });
 })();
